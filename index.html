@@ -47,14 +47,14 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .toast.err{background:#D85A30}
 .empty{text-align:center;padding:2rem;color:#888;font-size:13px}
 
-/* ระบบหน้าต่างข้อความป๊อปอัพ (Modal Window) */
+/* ระบบหน้าต่างป๊อปอัพยืนยันผลการทำงาน (Modal) */
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
 .modal-content{background:white;padding:20px;border-radius:16px;max-width:440px;width:100%;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
 .modal-title{font-size:16px;font-weight:600;color:#1D9E75;margin-bottom:14px;display:flex;align-items:center;gap:6px}
 .modal-line{font-size:13px;margin-bottom:8px;color:#444;line-height:1.4}
 .modal-btn{width:100%;padding:10px;background:#1D9E75;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:'Sarabun',sans-serif;margin-top:12px}
 
-/* สไตล์ตารางปฏิทิน Calendar */
+/* สไตล์ระบบตารางปฏิทินรายสัปดาห์ Calendar */
 .cal-table{width:100%;border-collapse:collapse;margin-top:8px;background:white;font-size:12px}
 .cal-table th,.cal-table td{border:1px solid #e0e0d8;padding:10px;text-align:center;vertical-align:top}
 .cal-table th{background:#F0F0EC;font-weight:600;color:#444}
@@ -63,14 +63,14 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .cal-today{background:#E8F8F2}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght=400;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div class="topbar">
   <div>
     <h1>🚗 ระบบจองรถส่วนกลาง (Engineering Div)</h1>
-    <div class="sub">รถส่วนกลาง 2 คัน</div>
+    <div class="sub">ข้อมูลส่วนกลางอัปเดตเรียลไทม์</div>
   </div>
   <button class="sync-btn" onclick="syncFromSheets()">⟳ ซิงค์ข้อมูล</button>
 </div>
@@ -89,17 +89,14 @@ const CARS=[
 ];
 
 let bookings=[];
-// ⚠️ แปะลิงก์เว็บแอป Google Apps Script ของคุณในเครื่องหมายคำพูดด้านล่างนี้ครับ
-let gasUrl = 'https://script.google.com/macros/s/AKfycbzW5gmNKnX4bt7va5iyBXP_cORLnVMJE0yk0zbO4XgNRc_acRPoylx8LF2hhdjVT2Zc/exec'; 
+// ⚠️ แปะลิ้งก์ Web App ล่าสุดของคุณแทนที่ในเครื่องหมายคำพูดด้านล่างนี้ได้เลยครับ
+let gasUrl = 'https://script.google.com/macros/s/AKfycbyOXVGNifYj-SlyeW0GWT5iBpzFThuzxvHZfa7_lTzNQ4d9s2rMauix2FbzOIDV2j3L/exec'; 
 
 let tab='form';
 let filter='all';
 let selCar=null;
 let returnCarSelection=null;
 let form={name:'',dept:'',phone:'',dateFrom:'',dateTo:'',purpose:'',driver:'',email:''};
-
-function saveBookings(){localStorage.setItem('cb_bookings',JSON.stringify(bookings));}
-function loadBookings(){const x=localStorage.getItem('cb_bookings');if(x){bookings=JSON.parse(x);}}
 
 function todayStr(){
   const d=new Date();
@@ -111,7 +108,6 @@ function isCarBusyInPeriod(carId, fromDate, toDate) {
   return bookings.some(b => b.carId === carId && b.status === 'active' && (fromDate <= b.dateTo && toDate >= b.dateFrom));
 }
 
-// 💡 ดึงจุดจอดคืนล่าสุดของคันนั้นๆ เพื่อแจ้งให้ผู้ใช้คนถัดไปทราบล่วงหน้า
 function getLastKnownLocation(carId) {
   const sorted = [...bookings]
     .filter(b => b.carId === carId && (b.status === 'active' || b.status === 'returned'))
@@ -131,15 +127,15 @@ function showToast(msg,err=false){
 function handleGoogleData(data) {
   if(data && data.success && data.bookings){
     bookings = data.bookings;
-    saveBookings();
     render();
     showToast('ซิงค์ข้อมูลสำเร็จ ✓');
   } else {
-    showToast('ไม่สามารถเชื่อมข้อมูลได้',true);
+    showToast('ไม่สามารถเชื่อมข้อมูลได้ หรือยังไม่มีฐานข้อมูลจอง',true);
   }
 }
 
 function syncFromSheets(){
+  showToast('กำลังโหลดข้อมูล...');
   const oldScript = document.getElementById('jsonp-sync');
   if(oldScript) oldScript.remove();
   const script = document.createElement('script');
@@ -219,14 +215,13 @@ function submit(){
     dateFrom: form.dateFrom,
     dateTo: form.dateTo,
     purpose: form.purpose.trim(),
-    floor: lastLoc.floor,       // บันทึกสืบทอดพิกัดจุดจอดเดิมของผู้ใช้คนก่อนหน้าไว้
+    floor: lastLoc.floor,       
     pillar: lastLoc.pillar,
     status: 'active',
     createdAt: new Date().toISOString(),
   };
 
   bookings.push(b);
-  saveBookings();
   pushToSheets(b);
 
   form = { name: '', dept: '', phone: '', dateFrom: '', dateTo: '', purpose: '', driver: '', email: '' };
@@ -258,7 +253,6 @@ function executeReturnCar(id) {
     b.status = 'returned';
     b.floor = floorVal;
     b.pillar = pillarVal;
-    saveBookings();
     updateSheets(id, 'returned', floorVal, pillarVal);
     
     const targetCar = CARS.find(c => c.id === b.carId);
@@ -279,7 +273,7 @@ function executeReturnCar(id) {
 
 function cancelBook(id){
   const b=bookings.find(x=>x.id===id);
-  if(b){b.status='cancelled';saveBookings();updateSheets(id,'cancelled');render();showToast('ยกเลิกการจองแล้ว');setTimeout(syncFromSheets,1500);}
+  if(b){b.status='cancelled';updateSheets(id,'cancelled');showToast('ยกเลิกการจองแล้ว');setTimeout(syncFromSheets,1000);}
 }
 
 function setSelCar(id){ captureFormValues(); selCar=id; render(); }
@@ -397,7 +391,7 @@ function render(){
           • ผู้ใช้: ${selectedBooking.name} | แผนก: ${selectedBooking.dept || '-'}<br>
           • วัตถุประสงค์: ${selectedBooking.purpose}
         </div>
-        <div class="card-title" style="margin-top:16px; color:#1a1a1a;">🅿️ 4. ระบุจุดจอดรถหลังใช้งานคืน</div>
+        <div class="card-title" style="margin-top:16px; color:#1a1a1a;">🅿️ ระบุจุดจอดรถหลังใช้งานคืน</div>
         <div class="grid2">
           <div class="field"><label>ชั้นที่จอดรถยนต์คืน<span class="req">*</span></label><input id="ret-floor" type="text" placeholder="เช่น ชั้น 3, ลานจอดด้านข้าง" /></div>
           <div class="field"><label>เลขเสาจอดใกล้ที่สุด<span class="req">*</span></label><input id="ret-pillar" type="text" placeholder="เช่น A12, B3" /></div>
@@ -436,9 +430,10 @@ function render(){
   document.getElementById('root').innerHTML=stats+tabs+content;
 }
 
-loadBookings();
-setTimeout(syncFromSheets, 400);
+// จุดเปลี่ยนสำคัญ: บังคับโหลดข้อมูลจากคลาวด์ศูนย์กลางเท่านั้นเพื่อซิงค์ข้อมูลข้ามเครื่อง
+bookings = [];
 render();
+syncFromSheets();
 </script>
 </body>
 </html>
