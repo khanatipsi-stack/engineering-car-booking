@@ -92,8 +92,8 @@ const CARS=[
 ];
 
 let bookings=[];
-// 📌 นำ URL เว็บแอปที่ก๊อปปี้มาจาก Apps Script มาวางแทนที่คำว่า วาง_URL_WEB_APP_ตรงนี้ ตัวอย่างเช่น 'https://script.google.com/macros/s/.../exec'
-let gasUrl = 'https://script.google.com/macros/s/AKfycbzW5gmNKnX4bt7va5iyBXP_cORLnVMJE0yk0zbO4XgNRc_acRPoylx8LF2hhdjVT2Zc/exec'; 
+// ⚠️ แปะลิ้งก์ Web App ล่าสุดของคุณแทนที่ในเครื่องหมายคำพูดด้านล่างนี้ได้เลยครับ
+let gasUrl = 'https://script.google.com/macros/s/AKfycbyOXVGNifYj-SlyeW0GWT5iBpzFThuzxvHZfa7_lTzNQ4d9s2rMauix2FbzOIDV2j3L/exec'; 
 
 let tab='form';
 let filter='all';
@@ -120,16 +120,31 @@ function showToast(msg,err=false){
   setTimeout(()=>{el.style.display='none';},2800);
 }
 
-async function syncFromSheets(){
+// 🟩 ฟังก์ชันเวอร์ชันใหม่: ใช้ตรรกะ JSONP ทะลุกำแพงบราวเซอร์ บล็อก CORS ไม่ได้แน่นอน
+function handleGoogleData(data) {
+  if(data && data.success && data.bookings){
+    bookings = data.bookings;
+    saveBookings();
+    render();
+    showToast('ซิงค์ข้อมูลสำเร็จ ✓');
+  } else {
+    showToast('ไม่สามารถเชื่อมข้อมูลได้',true);
+  }
+}
+
+function syncFromSheets(){
   if(!gasUrl || gasUrl.includes('วาง_URL')){showToast('กรุณาตั้งค่าก๊อปปี้ URL มาวางในโค้ดก่อนครับ',true);return;}
   showToast('กำลังดึงข้อมูลล่าสุด...');
-  try{
-    const r=await fetch(gasUrl+'?action=getBookings');
-    const d=await r.json();
-    if(d.success&&d.bookings){
-      bookings=d.bookings;saveBookings();render();showToast('ซิงค์ข้อมูลสำเร็จ ✓');
-    }
-  }catch(e){showToast('ไม่สามารถเชื่อมข้อมูลได้',true);}
+  
+  // ลบแท็กเก่าทิ้งก่อนเพื่อความสะอาด
+  const oldScript = document.getElementById('jsonp-sync');
+  if(oldScript) oldScript.remove();
+  
+  // สร้างตัวยิงสคริปต์ทะลุกำแพง CORS ไปที่ Google
+  const script = document.createElement('script');
+  script.id = 'jsonp-sync';
+  script.src = gasUrl + '?action=getBookings&callback=handleGoogleData';
+  document.body.appendChild(script);
 }
 
 async function pushToSheets(booking){
@@ -283,10 +298,8 @@ function render(){
   document.getElementById('root').innerHTML=stats+tabs+content;
 }
 
-// โหลดข้อมูลอัตโนมัติเมื่อเปิดหน้าเว็บ
 setTimeout(syncFromSheets, 800);
 render();
 </script>
 </body>
 </html>
-
