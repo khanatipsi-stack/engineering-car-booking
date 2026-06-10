@@ -47,14 +47,12 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .toast.err{background:#D85A30}
 .empty{text-align:center;padding:2rem;color:#888;font-size:13px}
 
-/* ระบบหน้าต่างป๊อปอัพยืนยันผลการทำงาน (Modal) */
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
 .modal-content{background:white;padding:20px;border-radius:16px;max-width:440px;width:100%;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
 .modal-title{font-size:16px;font-weight:600;color:#1D9E75;margin-bottom:14px;display:flex;align-items:center;gap:6px}
 .modal-line{font-size:13px;margin-bottom:8px;color:#444;line-height:1.4}
 .modal-btn{width:100%;padding:10px;background:#1D9E75;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:'Sarabun',sans-serif;margin-top:12px}
 
-/* สไตล์ระบบตารางปฏิทินรายสัปดาห์ Calendar */
 .cal-table{width:100%;border-collapse:collapse;margin-top:8px;background:white;font-size:12px}
 .cal-table th,.cal-table td{border:1px solid #e0e0d8;padding:10px;text-align:center;vertical-align:top}
 .cal-table th{background:#F0F0EC;font-weight:600;color:#444}
@@ -70,7 +68,7 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 <div class="topbar">
   <div>
     <h1>🚗 ระบบจองรถส่วนกลาง (Engineering Div)</h1>
-    <div class="sub">ข้อมูลส่วนกลางอัปเดตเรียลไทม์</div>
+    <div class="sub">ฐานข้อมูลซิงค์ตรงกันทุกเครื่อง</div>
   </div>
   <button class="sync-btn" onclick="syncFromSheets()">⟳ ซิงค์ข้อมูล</button>
 </div>
@@ -89,8 +87,8 @@ const CARS=[
 ];
 
 let bookings=[];
-// ⚠️ แปะลิ้งก์ Web App ล่าสุดของคุณแทนที่ในเครื่องหมายคำพูดด้านล่างนี้ได้เลยครับ
-let gasUrl = 'https://script.google.com/macros/s/AKfycbzW5gmNKnX4bt7va5iyBXP_cORLnVMJE0yk0zbO4XgNRc_acRPoylx8LF2hhdjVT2Zc/exec'; 
+// ⚠️ เปลี่ยนลิงก์ Web App ตรงนี้ให้เป็นของคุณนะครับ
+let gasUrl = 'https://script.google.com/macros/s/AKfycbyOXVGNifYj-SlyeW0GWT5iBpzFThuzxvHZfa7_lTzNQ4d9s2rMauix2FbzOIDV2j3L/exec'; 
 
 let tab='form';
 let filter='all';
@@ -124,18 +122,18 @@ function showToast(msg,err=false){
   setTimeout(()=>{el.style.display='none';},2800);
 }
 
+// รับข้อมูลซิงค์จาก Sheets แบบเสถียรข้ามบราวเซอร์
 function handleGoogleData(data) {
   if(data && data.success && data.bookings){
     bookings = data.bookings;
     render();
     showToast('ซิงค์ข้อมูลสำเร็จ ✓');
   } else {
-    showToast('ไม่สามารถเชื่อมข้อมูลได้ หรือยังไม่มีฐานข้อมูลจอง',true);
+    showToast('ดึงข้อมูลไม่สำเร็จ',true);
   }
 }
 
 function syncFromSheets(){
-  showToast('กำลังโหลดข้อมูล...');
   const oldScript = document.getElementById('jsonp-sync');
   if(oldScript) oldScript.remove();
   const script = document.createElement('script');
@@ -144,12 +142,20 @@ function syncFromSheets(){
   document.body.appendChild(script);
 }
 
-async function pushToSheets(booking){
-  try{await fetch(gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'addBooking',...booking})});}catch(e){}
+// จัดส่งข้อมูลแบบแก้ปัญหา CORS Error (JSONP ขาออก)
+function jsonpAction(urlParams, successCallbackName) {
+  const oldScript = document.getElementById('jsonp-action');
+  if(oldScript) oldScript.remove();
+  const script = document.createElement('script');
+  script.id = 'jsonp-action';
+  script.src = gasUrl + '?' + urlParams + '&callback=' + successCallbackName;
+  document.body.appendChild(script);
 }
 
-async function updateSheets(id,status,floor='',pillar=''){
-  try{await fetch(gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateStatus',id,status,floor,pillar})});}catch(e){}
+function handleBookingResponse(data) {
+  if(data && data.success) {
+    syncFromSheets();
+  }
 }
 
 function captureFormValues() {
@@ -204,40 +210,42 @@ function submit(){
   const lastLoc = getLastKnownLocation(selCar);
   const targetCar = CARS.find(c => c.id === selCar);
 
-  const b = {
-    id: Date.now().toString(),
-    carId: selCar,
-    name: form.name.trim(),
-    dept: form.dept.trim(),
-    phone: form.phone.trim(),
-    driver: form.driver.trim(),
-    email: form.email.trim(),
-    dateFrom: form.dateFrom,
-    dateTo: form.dateTo,
-    purpose: form.purpose.trim(),
-    floor: lastLoc.floor,       
-    pillar: lastLoc.pillar,
-    status: 'active',
-    createdAt: new Date().toISOString(),
-  };
+  const queryParams = 
+    'action=addBooking' +
+    '&id=' + encodeURIComponent(Date.now().toString()) +
+    '&carId=' + encodeURIComponent(selCar) +
+    '&name=' + encodeURIComponent(form.name.trim()) +
+    '&dept=' + encodeURIComponent(form.dept.trim()) +
+    '&phone=' + encodeURIComponent(form.phone.trim()) +
+    '&driver=' + encodeURIComponent(form.driver.trim()) +
+    '&email=' + encodeURIComponent(form.email.trim()) +
+    '&dateFrom=' + encodeURIComponent(form.dateFrom) +
+    '&dateTo=' + encodeURIComponent(form.dateTo) +
+    '&purpose=' + encodeURIComponent(form.purpose.trim()) +
+    '&floor=' + encodeURIComponent(lastLoc.floor) +
+    '&pillar=' + encodeURIComponent(lastLoc.pillar) +
+    '&status=active' +
+    '&createdAt=' + encodeURIComponent(new Date().toISOString());
 
-  bookings.push(b);
-  pushToSheets(b);
-
-  form = { name: '', dept: '', phone: '', dateFrom: '', dateTo: '', purpose: '', driver: '', email: '' };
-  selCar = null;
+  // บันทึกและซิงค์ทันทีผ่าน JSONP
+  jsonpAction(queryParams, 'handleBookingResponse');
 
   showSuccessModal(
-    "ทำการบันทึกจองรถยนต์สำเร็จ!",
+    "ส่งข้อมูลคำขอจองสำเร็จแล้ว!",
     [
       `<b>🚗 รถทะเบียน:</b> ${targetCar.plate} (${targetCar.name})`,
-      `<b>👤 ชื่อผู้จอง:</b> ${b.name}`,
-      `<b>📅 กำหนดการ:</b> ${b.dateFrom} ถึง ${b.dateTo}`,
-      `<b>🅿️ พิกัดจอดรับรถ:</b> <span style="color:#1D9E75; font-weight:600;">${b.floor} (เสา ${b.pillar})</span>`,
-      `⚠️ *หมายเหตุ: เป็นจุดจอดอ้างอิงเดิมที่ผู้ใช้งานคนล่าสุด (${lastLoc.by}) ได้ทำการจอดคืนไว้*`,
-      `<br><span style="color:#666; font-size:11px;">✉️ ระบบจัดส่งเมลรายละเอียดนัดหมายไปที่ ${b.email} เรียบร้อยแล้ว</span>`
+      `<b>👤 ชื่อผู้จอง:</b> ${form.name}`,
+      `<b>📅 กำหนดการ:</b> ${form.dateFrom} ถึง ${form.dateTo}`,
+      `<b>🅿️ พิกัดรับรถอ้างอิง:</b> <span style="color:#1D9E75; font-weight:600;">${lastLoc.floor} (เสา ${lastLoc.pillar})</span>`,
+      `⚠️ *หมายเหตุ: เป็นจุดจอดที่พนักงานคนล่าสุด (${lastLoc.by}) นำมาคืนไว้*`,
+      `<br><span style="color:#666; font-size:11px;">✉️ ระบบกำลังจัดส่งข้อมูลเข้าสู่อีเมลของคุณ</span>`
     ],
-    () => { tab = 'list'; render(); syncFromSheets(); }
+    () => { 
+      form = { name: '', dept: '', phone: '', dateFrom: '', dateTo: '', purpose: '', driver: '', email: '' };
+      selCar = null;
+      tab = 'list'; 
+      render(); 
+    }
   );
 }
 
@@ -250,30 +258,35 @@ function executeReturnCar(id) {
 
   const b = bookings.find(x => x.id === id);
   if (b) {
-    b.status = 'returned';
-    b.floor = floorVal;
-    b.pillar = pillarVal;
-    updateSheets(id, 'returned', floorVal, pillarVal);
+    const queryParams = 
+      'action=updateStatus' +
+      '&id=' + encodeURIComponent(id) +
+      '&status=returned' +
+      '&floor=' + encodeURIComponent(floorVal) +
+      '&pillar=' + encodeURIComponent(pillarVal);
+
+    jsonpAction(queryParams, 'handleBookingResponse');
     
     const targetCar = CARS.find(c => c.id === b.carId);
     returnCarSelection = null;
 
     showSuccessModal(
-      "แจ้งส่งคืนรถส่วนกลางสำเร็จ!",
+      "แจ้งส่งคืนรถส่วนกลางเรียบร้อย!",
       [
         `<b>✅ คืนรถทะเบียน:</b> ${targetCar.plate}`,
         `<b>👤 ผู้ส่งคืน:</b> ${b.name}`,
-        `<b>🅿️ พิกัดจอดคืนใหม่:</b> ${floorVal} (เสา ${pillarVal})`,
-        `<br><span style="color:#666; font-size:11px;">✉️ สรุปรายงานการคืนรถส่งเข้าเมลเรียบร้อยแล้ว</span>`
+        `<b>🅿️ พิกัดจอดคืนล่าสุด:</b> ${floorVal} (เสา ${pillarVal})`,
+        `<br><span style="color:#666; font-size:11px;">✉️ รายงานข้อมูลสรุปถูกจัดส่งไปที่อีเมลแล้ว</span>`
       ],
-      () => { tab = 'list'; render(); syncFromSheets(); }
+      () => { tab = 'list'; render(); }
     );
   }
 }
 
 function cancelBook(id){
-  const b=bookings.find(x=>x.id===id);
-  if(b){b.status='cancelled';updateSheets(id,'cancelled');showToast('ยกเลิกการจองแล้ว');setTimeout(syncFromSheets,1000);}
+  const queryParams = 'action=updateStatus&id=' + encodeURIComponent(id) + '&status=cancelled';
+  jsonpAction(queryParams, 'handleBookingResponse');
+  showToast('กำลังยกเลิกการจอง...');
 }
 
 function setSelCar(id){ captureFormValues(); selCar=id; render(); }
@@ -430,7 +443,7 @@ function render(){
   document.getElementById('root').innerHTML=stats+tabs+content;
 }
 
-// จุดเปลี่ยนสำคัญ: บังคับโหลดข้อมูลจากคลาวด์ศูนย์กลางเท่านั้นเพื่อซิงค์ข้อมูลข้ามเครื่อง
+// โหลดข้อมูลแบบเรียลไทม์จากศูนย์กลาง ไม่ใช้ข้อมูลฝังบราวเซอร์
 bookings = [];
 render();
 syncFromSheets();
