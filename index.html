@@ -162,23 +162,49 @@ async function updateSheets(id,status){
 }
 
 function submit(){
-  if(!selCar){showToast('กรุณาเลือกรถ',true);return;}
-  if(!form.name){showToast('กรอกชื่อผู้ใช้งาน',true);return;}
-  if(!form.dateFrom||!form.dateTo){showToast('กรอกวันที่ยืม-คืน',true);return;}
-  if(form.dateFrom>form.dateTo){showToast('วันคืนต้องไม่ก่อนวันยืม',true);return;}
-  if(!form.purpose){showToast('กรอกวัตถุประสงค์',true);return;}
-  if(!selFloor.trim()){showToast('กรอกชั้นที่จอด',true);return;}
-  if(!selPillar.trim()){showToast('กรอกเลขเสา',true);return;}
+  // ดึงค่าล่าสุดจาก Element หน้าจอโดยตรง เพื่อป้องกันปัญหาตัวแปรไม่ยอมอัปเดต
+  const nameVal = document.getElementById('f-name') ? document.getElementById('f-name').value.trim() : '';
+  const deptVal = document.getElementById('f-dept') ? document.getElementById('f-dept').value.trim() : '';
+  const phoneVal = document.getElementById('f-phone') ? document.getElementById('f-phone').value.trim() : '';
+  const driverVal = document.getElementById('f-driver') ? document.getElementById('f-driver').value.trim() : '';
+  const fromVal = document.getElementById('f-from') ? document.getElementById('f-from').value.trim() : '';
+  const toVal = document.getElementById('f-to') ? document.getElementById('f-to').value.trim() : '';
+  const purposeVal = document.getElementById('f-purpose') ? document.getElementById('f-purpose').value.trim() : '';
+
+  // ตรวจสอบความถูกต้องของข้อมูล
+  if (!selCar){showToast('กรุณาเลือกรถ',true);return;}
+  if (!nameVal){showToast('กรอกชื่อผู้ใช้งาน',true);return;}
+  if (!fromVal||!toVal){showToast('กรอกวันที่ยืม-คืน',true);return;}
+  if (fromVal>toVal){showToast('วันคืนต้องไม่ก่อนวันยืม',true);return;}
+  if (!purposeVal){showToast('กรอกวัตถุประสงค์',true);return;}
+  if (!selFloor.trim()){showToast('กรอกชั้นที่จอด',true);return;}
+  if (!selPillar.trim()){showToast('กรอกเลขเสา',true);return;}
+
+  // สร้างก้อนข้อมูลที่พร้อมส่งบันทึกเข้า Google Sheets
   const b={
-    id:Date.now().toString(),carId:selCar,
-    name:form.name,dept:form.dept,phone:form.phone,driver:form.driver,
-    dateFrom:form.dateFrom,dateTo:form.dateTo,purpose:form.purpose,
-    floor:selFloor.trim(),pillar:selPillar.trim(),
-    status:'active',createdAt:new Date().toISOString(),
+    id:Date.now().toString(),
+    carId:selCar,
+    name:nameVal,
+    dept:deptVal,
+    phone:phoneVal,
+    driver:driverVal,
+    dateFrom:fromVal,
+    dateTo:toVal,
+    purpose:purposeVal,
+    floor:selFloor.trim(),
+    pillar:selPillar.trim(),
+    status:'active',
+    createdAt:new Date().toISOString(),
   };
-  bookings.push(b);saveBookings();pushToSheets(b);
+
+  bookings.push(b);
+  saveBookings();
+  pushToSheets(b);
+
+  // ล้างฟอร์มให้กลับเป็นค่าว่าง
   form={name:'',dept:'',phone:'',dateFrom:'',dateTo:'',purpose:'',driver:''};
   selCar=null;selFloor='';selPillar='';
+  
   showToast('ส่งข้อมูลการจองสำเร็จ! ✓');
   setTimeout(()=>{tab='list';syncFromSheets();},1000);
 }
