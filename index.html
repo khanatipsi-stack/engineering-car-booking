@@ -38,7 +38,7 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .car-opt{border:1.5px solid #e0e0d8;border-radius:12px;padding:12px;cursor:pointer;transition:all .15s;background:white}
 .car-opt:hover:not(.busy-car){border-color:#1D9E75}
 .car-opt.selected{border-color:#1D9E75;background:#E8F8F2}
-.car-opt.busy-car{opacity:.45;pointer-events:none;background:#fcf1ed;border-color:#f5d0c4}
+.car-opt.busy-car{opacity:.45;pointer-events:none;background:#fcf1ed;border-color:#f5d0c4;cursor:not-allowed}
 .car-icon{font-size:24px}
 .cn{font-size:13px;font-weight:600;margin-top:6px;color:#1a1a1a}
 .cp{font-size:11px;color:#888;margin-top:2px}
@@ -204,17 +204,21 @@ function setSyncStatus(text) {
   if (el) el.textContent = text;
 }
 
-// เช็คทับซ้อนช่วงวัน (แก้ไขระบบป้องกันการจองซ้ำตามการแมปปิ้ง Object)
+// [แก้ไขจุดที่ 1 และ 3]: ปรับปรุงตรรกะเช็กวันจองซ้อน (รองรับกรณีจองวันเดียวกัน เริ่ม 12 คืน 12)
 function isCarBusy(carId, fromDate, toDate) {
   if (!fromDate || !toDate) return false;
+  
+  const newStart = new Date(fromDate).getTime();
+  const newEnd = new Date(toDate).getTime();
+
   return bookings.some(b => {
     if (b.carId !== carId || b.status !== 'active') return false;
     
-    // ดึงวันที่จากฟิลด์ตรงๆ และทำการตัดข้อความเอาฟอร์แมต YYYY-MM-DD
-    const bFrom = String(b.dateFrom).split('T')[0];
-    const bTo = String(b.dateTo).split('T')[0];
+    // ดึงวันที่จากฟิลด์ตรงๆ ตัดเวลาออกแล้วแปลงเป็นตัวเลขเพื่อเปรียบเทียบความคาบเกี่ยวแบบสากล
+    const bFrom = new Date(String(b.dateFrom).split('T')[0]).getTime();
+    const bTo = new Date(String(b.dateTo).split('T')[0]).getTime();
     
-    return (bFrom <= toDate && bTo >= fromDate);
+    return (newStart <= bTo && newEnd >= bFrom);
   });
 }
 
@@ -463,9 +467,8 @@ function submit() {
     },
     (err) => {
       setLoading(false);
-      // ตรงนี้จะดึงข้อความ Error เรื่องจองซ้อนจากฝั่ง Google Sheets ขึ้นมาแจ้งเตือนหน้าจอทันที
       showToast(err, true); 
-      syncFromSheets(false); // อัปเดตตารางเวลาในระบบใหม่ทันที
+      syncFromSheets(false);
     }
   );
 }
@@ -558,6 +561,7 @@ function cancelBook(id) {
 // =============================================
 // CALENDAR CALCULATION
 // =============================================
+// [แก้ไขจุดที่ 2]: ปรับเงื่อนไขดึงและตรวจสอบวันที่ของแต่ละวันในแถวปฏิทินให้ตรงกับระบบ Timestamp ปฏิทินจึงขึ้นสถานะแบบ Realtime
 function generateCalendar() {
   const today = new Date();
   const dow = today.getDay();
@@ -576,11 +580,23 @@ function generateCalendar() {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
     const ds = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    const targetTime = new Date(ds).getTime();
     const isToday = ds === todayStr();
     
-    // ดึงค่าวันที่ผ่าน Object properties ตรงๆ เพื่อเช็คแสดงผลตาราง
-    const c1 = bookings.filter(b => b.carId==='CAR1' && b.status==='active' && ds >= String(b.dateFrom).split('T')[0] && ds <= String(b.dateTo).split('T')[0]);
-    const c2 = bookings.filter(b => b.carId==='CAR2' && b.status==='active' && ds >= String(b.dateFrom).split('T')[0] && ds <= String(b.dateTo).split('T')[0]);
+    // กรองประวัติการจองที่ทับอยู่กับวันนี้ในตาราง (และต้องมีสถานะเป็น active เท่านั้น)
+    const c1 = bookings.filter(b => {
+      if (b.carId !== 'CAR1' || b.status !== 'active') return false;
+      const bFrom = new Date(String(b.dateFrom).split('T')[0]).getTime();
+      const bTo = new Date(String(b.dateTo).split('T')[0]).getTime();
+      return (targetTime >= bFrom && targetTime <= bTo);
+    });
+    
+    const c2 = bookings.filter(b => {
+      if (b.carId !== 'CAR2' || b.status !== 'active') return false;
+      const bFrom = new Date(String(b.dateFrom).split('T')[0]).getTime();
+      const bTo = new Date(String(b.dateTo).split('T')[0]).getTime();
+      return (targetTime >= bFrom && targetTime <= bTo);
+    });
     
     const fmt = b => `<div class="cal-booked-box"><b>${esc(b.name)}</b><br>${esc(b.purpose)}</div>`;
     html += `<tr ${isToday ? 'class="cal-today"' : ''}>
@@ -594,7 +610,7 @@ function generateCalendar() {
 }
 
 // =============================================
-// RENDER INTERFACE (แก้ไขการดึงค่า Object ในหน้าประวัติและสถานะ)
+// RENDER INTERFACE
 // =============================================
 function render() {
   const todayActiveCt = CARS.filter(c =>
@@ -625,6 +641,8 @@ function render() {
       const sel  = selCar === car.id;
       const info = getLastInfo(car.id);
       const mileText = info.mileage ? `🔢 เลขไมล์ล่าสุด: ${esc(info.mileage)} กม.` : '🔢 ยังไม่มีข้อมูลเลขไมล์';
+      
+      // [แก้ไขจุดที่ 3]: เพิ่มคุณสมบัติ css ให้ถ้ารถไม่ว่าง จะไม่สามารถคลิกเลือกได้ (pointer-events: none ที่คลาส busy-car ทำงานทันที)
       return `<div class="car-opt ${sel?'selected':''} ${busy?'busy-car':''}"
           onclick="${busy ? "showToast('รถคันนี้ไม่ว่างในช่วงนั้น',true)" : `setSelCar('${car.id}')`}">
         <div style="display:flex;justify-content:space-between;align-items:center">
