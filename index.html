@@ -256,7 +256,7 @@ function jsonpCall(params, onSuccess, onError, timeoutMs=15000) {
     if (done) return;
     cleanup();
     if (data && data.success) onSuccess(data);
-    else onError(data ? (data.error||'Server error') : 'No response');
+    else onError(data ? (data.error || data.message || 'Server error') : 'No response');
   };
 
   const timer = setTimeout(() => {
@@ -463,7 +463,9 @@ function submit() {
     },
     (err) => {
       setLoading(false);
-      showToast('บันทึกไม่สำเร็จ: ' + err, true);
+      // ตรงนี้จะดึงข้อความ Error เรื่องจองซ้อนจากฝั่ง Google Sheets ขึ้นมาแจ้งเตือนหน้าจอทันที
+      showToast(err, true); 
+      syncFromSheets(false); // อัปเดตตารางเวลาในระบบใหม่ทันที
     }
   );
 }
@@ -702,94 +704,70 @@ function render() {
             <div class="field"><label>เสาที่จอดคืน <span class="req">*</span></label><input id="ret-pillar" type="text" placeholder="เช่น A5"/></div>
           </div>
           <div class="field">
-            <label>เลขไมล์สุดท้ายก่อนคืน <span class="req">*</span></label>
-            <input id="ret-mileage" type="number" inputmode="numeric" placeholder="เช่น 12500"/>
+            <label>เลขไมล์สุดท้ายก่อนคืนรถ <span class="req">*</span></label>
+            <input id="ret-mileage" type="number" inputmode="numeric" placeholder="โปรดดูที่หน้าปัดรถยนต์จริง"/>
           </div>
-          <button class="submit-btn blue" onclick="executeReturn('${returnCarId}')">🔑 บันทึกการคืนรถ</button>
-        </div>`;
+        </div>
+        <button class="submit-btn blue" onclick="executeReturn('${sel.id}')">✓ ยืนยันบันทึกการคืนรถ</button>`;
     }
   }
 
   else if (tab === 'calendar') {
-    content = `<div class="card"><div class="card-title">📅 ตารางสถานะรถรายสัปดาห์</div>${generateCalendar()}</div>`;
+    content = `<div class="card"><div class="card-title">📅 ตารางการใช้งานสัปดาห์นี้</div>${generateCalendar()}</div>`;
   }
 
   else if (tab === 'list') {
-    // แก้ไขระบบกรองข้อมูลและแมปปิ้งให้ดึงค่าตรงตามชื่อ Properties เพื่อแสดงผลในหน้ารายการประวัติให้สมบูรณ์
-    let filtered = bookings;
-    if (filter === 'active')    filtered = bookings.filter(b => b.status === 'active');
-    if (filter === 'returned')  filtered = bookings.filter(b => b.status === 'returned');
-    if (filter === 'cancelled') filtered = bookings.filter(b => b.status === 'cancelled');
+    let listData = [...bookings].sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+    if (filter !== 'all') listData = listData.filter(b => b.status === filter);
 
-    // เรียงลำดับเอาการจองล่าสุดขึ้นก่อน
-    filtered.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    const cards = listData.map(b => {
+      const car = CARS.find(c => c.id === b.carId);
+      const st = b.status === 'active' ? 'กำลังจอง' : b.status === 'returned' ? 'คืนรถแล้ว' : 'ยกเลิกแล้ว';
+      const badgeClass = b.status === 'active' ? 'active' : b.status === 'returned' ? 'returned' : 'cancelled';
+      
+      return `<div class="brow">
+        <div class="brow-top">
+          <div>
+            <div class="brow-name">${esc(b.name)} <small style="color:#666;font-weight:400">(${esc(b.dept || 'ไม่ระบุ')})</small></div>
+            <div class="brow-car">${car ? car.icon : ''} ${car ? car.name : 'ไม่ระบุ'} (${car ? car.plate : '-'})</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="badge ${badgeClass}">${st}</span>
+            ${b.status === 'active' ? `<button class="cancel-btn" onclick="cancelBook('${b.id}')">ยกเลิก</button>` : ''}
+          </div>
+        </div>
+        <div class="brow-grid">
+          <div><div class="brow-field">วันเริ่มยืม</div><div class="brow-val">${b.dateFrom ? b.dateFrom.split('T')[0] : '-'}</div></div>
+          <div><div class="brow-field">วันสิ้นสุด</div><div class="brow-val">${b.dateTo ? b.dateTo.split('T')[0] : '-'}</div></div>
+          <div><div class="brow-field">เบอร์ติดต่อ</div><div class="brow-val">${esc(b.phone || '-')}</div></div>
+        </div>
+        <div style="font-size:11px;color:#666;margin-top:8px;border-top:.5px solid #eee;padding-top:6px;line-height:1.4">
+          <b>📍 พิกัดจอด:</b> ${esc(b.floor || '-')} เสา ${esc(b.pillar || '-')} ${b.mileage ? `| 🔢 <b>เลขไมล์:</b> ${esc(b.mileage)} กม.` : ''}<br>
+          <b>💡 ไปที่ไหน/ทำอะไร:</b> ${esc(b.purpose)}
+        </div>
+      </div>`;
+    }).join('');
 
-    const filterBar = `<div class="filter-bar">
-      <button class="filter-btn ${filter==='all'?'on':''}" onclick="setFilter('all')">ทั้งหมด (${bookings.length})</button>
-      <button class="filter-btn ${filter==='active'?'on':''}" onclick="setFilter('active')">กำลังใช้งาน (${bookings.filter(b=>b.status==='active').length})</button>
-      <button class="filter-btn ${filter==='returned'?'on':''}" onclick="setFilter('returned')">คืนแล้ว (${bookings.filter(b=>b.status==='returned').length})</button>
-      <button class="filter-btn ${filter==='cancelled'?'on':''}" onclick="setFilter('cancelled')">ยกเลิก (${bookings.filter(b=>b.status==='cancelled').length})</button>
-    </div>`;
-
-    let listHtml = '';
-    if (filtered.length === 0) {
-      listHtml = `<div class="empty">ไม่พบข้อมูลประวัติการจอง</div>`;
-    } else {
-      listHtml = filtered.map(b => {
-        const car = CARS.find(c => c.id === b.carId);
-        const carName = car ? `${car.name} (ทะเบียน ${car.plate})` : b.carId;
-        
-        let statusLabel = 'กำลังใช้งาน';
-        if (b.status === 'returned') statusLabel = 'คืนรถแล้ว';
-        if (b.status === 'cancelled') statusLabel = 'ยกเลิกแล้ว';
-
-        const dFrom = b.dateFrom ? b.dateFrom.split('T')[0] : '-';
-        const dTo = b.dateTo ? b.dateTo.split('T')[0] : '-';
-
-        return `
-          <div class="brow">
-            <div class="brow-top">
-              <div>
-                <div class="brow-name">${esc(b.name)} <span style="font-weight:400;color:#666;font-size:11px">(${esc(b.dept || '-')})</span></div>
-                <div class="brow-car">🚗 ${carName}</div>
-              </div>
-              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px">
-                <span class="badge ${b.status}">${statusLabel}</span>
-                ${b.status === 'active' ? `<button class="cancel-btn" onclick="cancelBook('${b.id}')">ยกเลิก</button>` : ''}
-              </div>
-            </div>
-            <div class="brow-grid">
-              <div>
-                <div class="brow-field">วันยืม-คืน</div>
-                <div class="brow-val" style="color:#1D9E75">${dFrom} ถึง ${dTo}</div>
-              </div>
-              <div>
-                <div class="brow-field">สถานที่/วัตถุประสงค์</div>
-                <div class="brow-val" title="${esc(b.purpose)}">${esc(b.purpose)}</div>
-              </div>
-              <div>
-                <div class="brow-field">ที่จอด/เลขไมล์</div>
-                <div class="brow-val">${esc(b.floor)} เสา ${esc(b.pillar)} ${b.mileage ? `(${esc(b.mileage)} กม.)` : ''}</div>
-              </div>
-            </div>
-          </div>`;
-      }).join('');
-    }
-
-    content = filterBar + listHtml;
+    content = `
+      <div class="filter-bar">
+        <button class="filter-btn ${filter==='all'?'on':''}" onclick="setFilter('all')">ทั้งหมด</button>
+        <button class="filter-btn ${filter==='active'?'on':''}" onclick="setFilter('active')">กำลังจอง</button>
+        <button class="filter-btn ${filter==='returned'?'on':''}" onclick="setFilter('returned')">คืนแล้ว</button>
+        <button class="filter-btn ${filter==='cancelled'?'on':''}" onclick="setFilter('cancelled')">ยกเลิกแล้ว</button>
+      </div>
+      ${cards || '<div class="empty">ไม่พบข้อมูลประวัติการจอง</div>'}`;
   }
 
   document.getElementById('root').innerHTML = stats + tabBar + content;
 }
 
 // =============================================
-// STARTUP INIT
+// INITIALIZE
 // =============================================
-window.addEventListener('DOMContentLoaded', () => {
-  render();
+window.onload = function() {
   syncFromSheets(false);
   scheduleAutoSync();
-});
+};
 </script>
 </body>
 </html>
