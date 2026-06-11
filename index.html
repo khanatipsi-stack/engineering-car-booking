@@ -35,26 +35,18 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 
 /* car select */
 .car-sel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
-.car-opt{border:1.5px solid #e0e0d8;border-radius:12px;padding:12px;cursor:pointer;transition:all .15s;background:white;user-select:none}
+.car-opt{border:1.5px solid #e0e0d8;border-radius:12px;padding:12px;cursor:pointer;transition:all .15s;background:white}
 .car-opt:hover:not(.busy-car){border-color:#1D9E75}
 .car-opt.selected{border-color:#1D9E75;background:#E8F8F2}
-/* FIX #1: busy = เทาทั้งหมด กดไม่ได้ */
-.car-opt.busy-car{
-  opacity:.55;
-  pointer-events:none !important;
-  cursor:not-allowed !important;
-  background:#f2f2f2 !important;
-  border-color:#cccccc !important;
-}
+.car-opt.busy-car{opacity:.45;pointer-events:none;background:#fcf1ed;border-color:#f5d0c4}
 .car-icon{font-size:24px}
-.cn{font-size:13px;font-weight:600;margin-top:6px}
+.cn{font-size:13px;font-weight:600;margin-top:6px;color:#1a1a1a}
 .cp{font-size:11px;color:#888;margin-top:2px}
 .cbadge{font-size:10px;padding:2px 8px;border-radius:20px}
 .avail-b{background:#E1F5EE;color:#0F6E56}
-.busy-b{background:#e0e0e0;color:#666}
+.busy-b{background:#FAECE7;color:#993C1D}
 .location-tag{font-size:10px;color:#1D9E75;margin-top:4px;background:#f0faf6;padding:3px 6px;border-radius:4px}
 .mileage-tag{font-size:10px;color:#185FA5;margin-top:3px;background:#eef4fc;padding:3px 6px;border-radius:4px}
-.busy-who{font-size:10px;color:#888;margin-top:4px;background:#f2f2f2;padding:3px 7px;border-radius:4px}
 
 /* form */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -70,6 +62,12 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .submit-btn.red{background:#c0392b}.submit-btn.red:hover{background:#a93226}
 .submit-btn:disabled{background:#aaa;cursor:default}
 
+/* reminder box */
+.reminder-box{background:#FFF8E7;border:1px solid #F5C842;border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.reminder-box .rb-title{font-size:13px;font-weight:600;color:#7a5c00;margin-bottom:8px}
+.reminder-box .rb-row{font-size:12px;color:#5a4200;margin-bottom:5px;display:flex;align-items:flex-start;gap:6px}
+.reminder-box .rb-row span{flex:1}
+
 /* toast */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1D9E75;color:white;padding:10px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;display:none;white-space:nowrap;pointer-events:none}
 .toast.err{background:#D85A30}
@@ -83,6 +81,8 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .modal-btn{width:100%;padding:10px;background:#1D9E75;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:'Sarabun',sans-serif;margin-top:8px;font-size:14px}
 .modal-btn.grey{background:#888}
 .modal-btn.red{background:#c0392b}
+.modal-divider{border:none;border-top:1px solid #eee;margin:14px 0}
+/* admin pin input */
 .pin-wrap{display:flex;gap:8px;margin-top:6px}
 .pin-wrap input{flex:1;font-size:15px;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-family:'Sarabun',sans-serif;letter-spacing:4px;text-align:center}
 .pin-wrap input:focus{outline:none;border-color:#185FA5}
@@ -106,40 +106,15 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .filter-btn{font-size:11px;padding:4px 12px;border-radius:20px;border:.5px solid #ddd;background:white;color:#666;cursor:pointer;font-family:'Sarabun',sans-serif}
 .filter-btn.on{background:#1D9E75;color:white;border-color:#1D9E75}
 
-/* MONTHLY CALENDAR */
-.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.cal-nav-title{font-size:15px;font-weight:600;color:#333}
-.cal-nav-btn{background:none;border:1px solid #ddd;border-radius:8px;padding:5px 14px;cursor:pointer;font-size:16px;font-family:'Sarabun',sans-serif;color:#555;transition:background .12s;line-height:1}
-.cal-nav-btn:hover{background:#f0f0ec}
-.cal-today-btn{background:none;border:1px solid #1D9E75;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:'Sarabun',sans-serif;color:#1D9E75;transition:background .12s}
-.cal-today-btn:hover{background:#e8f8f2}
-
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.cal-header-cell{text-align:center;font-size:11px;font-weight:600;color:#888;padding:5px 2px}
-.cal-header-cell.sat{color:#2563eb}
-.cal-header-cell.sun{color:#c0392b}
-
-.cal-cell{min-height:78px;border:.5px solid #e8e8e3;border-radius:7px;padding:5px 4px;background:white;vertical-align:top;overflow:hidden}
-.cal-cell.other-month{background:#f8f8f5;opacity:.45}
-.cal-cell.today-cell{border-color:#1D9E75 !important;border-width:1.5px !important;background:#F0FBF5}
-.cal-cell.sat-cell .cal-day-num{color:#2563eb}
-.cal-cell.sun-cell .cal-day-num{color:#c0392b}
-.cal-cell.has-booking{background:#fffdf5}
-
-.cal-day-num{font-size:11px;font-weight:600;color:#666;display:block;margin-bottom:3px;text-align:right;line-height:1}
-.cal-cell.today-cell .cal-day-num{color:#1D9E75}
-
-/* chip แสดงในปฏิทิน */
-.cal-chip{font-size:9px;padding:2px 5px;border-radius:3px;margin-bottom:2px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
-.chip-1723{background:#d4edde;color:#0a5c40}
-.chip-7902{background:#d4e4ff;color:#1a3c8a}
-
-.cal-legend{display:flex;gap:12px;margin-top:10px;font-size:11px;color:#666;flex-wrap:wrap;padding-top:8px;border-top:.5px solid #eee}
-
-/* debug bar */
-.debug-bar{background:#fff8e7;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#7a5c00;display:none}
-
+/* calendar */
+.cal-table{width:100%;border-collapse:collapse;font-size:11px}
+.cal-table th,.cal-table td{border:.5px solid #e0e0d8;padding:8px;vertical-align:top}
+.cal-table th{background:#F0F0EC;font-weight:600;color:#444;text-align:center}
+.cal-booked-box{background:#FAECE7;border:.5px solid #f5d0c4;border-radius:5px;padding:4px;font-size:10px;color:#993C1D;margin-top:4px;line-height:1.4}
+.cal-day-num{font-weight:600;font-size:12px;color:#555;display:block;text-align:center}
+.cal-today{background:#F0FBF5}
 .empty{text-align:center;padding:2.5rem;color:#aaa;font-size:13px}
+
 .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:2000;font-size:14px;color:#555;gap:10px}
 .spinner{width:20px;height:20px;border:2.5px solid #e0e0d8;border-top-color:#1D9E75;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -147,10 +122,7 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 @media(max-width:480px){
   .grid2{grid-template-columns:1fr}
   .brow-grid{grid-template-columns:1fr 1fr}
-  .tabs .tab{font-size:10px;padding:8px 3px}
-  .cal-cell{min-height:56px;padding:3px 2px}
-  .cal-chip{font-size:8px;padding:1px 3px}
-  .cal-day-num{font-size:10px}
+  .tabs .tab{font-size:10px;padding:8px 4px}
 }
 </style>
 </head>
@@ -176,15 +148,14 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 
 <script>
 // =============================================
-// ⚙️ CONFIG — แก้ GAS_URL หลัง deploy ใหม่
+// ⚙️ CONFIG
 // =============================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxqZkXNGhEh3HYV1GOXwP1yIGl6skviGPkylZ7JAPSQAPg6VrMl6NeiQjgxilULpAc/exec';
 const ADMIN_PIN = '10080235';
 
-// FIX #2: carId เปลี่ยนเป็นหมายเลขทะเบียนแทน CAR1/CAR2
 const CARS = [
-  { id:'1723', name:'Toyota Yaris Ativ', plate:'1723', icon:'🚗' },
-  { id:'7902', name:'Toyota Yaris Ativ', plate:'7902', icon:'🚗' },
+  {id:'CAR1', name:'Toyota Yaris Ativ', plate:'1723', icon:'🚗'},
+  {id:'CAR2', name:'Toyota Yaris Ativ', plate:'7902', icon:'🚗'},
 ];
 
 // =============================================
@@ -198,231 +169,215 @@ let returnCarId = null;
 let isSyncing = false;
 let syncTimer = null;
 let jsonpCounter = 0;
-let calYear  = new Date().getFullYear();
-let calMonth = new Date().getMonth();
-let form = { name:'', dept:'', phone:'', dateFrom:'', dateTo:'', purpose:'', driver:'', email:'' };
+let form = {name:'',dept:'',phone:'',dateFrom:'',dateTo:'',purpose:'',driver:'',email:''};
 
 // =============================================
-// UTILS
+// UTILITIES
 // =============================================
-function esc(s) {
-  if (s === null || s === undefined) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 function todayStr() {
   const d = new Date();
-  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
 }
-function pad(n){ return String(n).padStart(2,'0'); }
-
-// FIX #3: เบอร์โทร — เก็บและแสดงเป็น string เสมอ เพื่อรักษา 0 นำหน้า
-function phoneStr(v) {
-  if (v === null || v === undefined || v === '') return '-';
-  // ถ้าเป็นตัวเลข (เช่น 950398869) ให้เติม 0 นำหน้า
-  const s = String(v).trim();
-  if (/^\d{9}$/.test(s)) return '0' + s;   // 9 หลัก → เติม 0
-  if (/^\d{10}$/.test(s)) return s;         // 10 หลัก → ใช้ตรงๆ
-  return s;
-}
+function pad(n) { return String(n).padStart(2,'0'); }
 
 function showToast(msg, isErr=false) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className = 'toast'+(isErr?' err':'');
+  el.className = 'toast' + (isErr ? ' err' : '');
   el.style.display = 'block';
   clearTimeout(el._t);
-  el._t = setTimeout(()=>{ el.style.display='none'; }, 3000);
+  el._t = setTimeout(() => { el.style.display='none'; }, 2800);
 }
+
 function setLoading(show, text='กำลังบันทึก...') {
-  document.getElementById('loading-overlay').style.display = show?'flex':'none';
+  document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
   document.getElementById('loading-text').textContent = text;
 }
+
 function setSyncStatus(text) {
   const el = document.getElementById('sync-status-text');
   if (el) el.textContent = text;
 }
 
-// =============================================
-// FIX #1: isCarBusy — เปรียบเทียบด้วย carId (ทะเบียน) และ string date
-// รองรับจองวันเดียว (from === to) และ overlap ทุกกรณี
-// =============================================
-function normalizeDate(v) {
-  if (!v) return '';
-  return String(v).trim().split('T')[0];   // ตัด timezone tail ออก
-}
-
+// BUG1 FIX: เช็คทับซ้อนช่วงวันอย่างถูกต้อง (inclusive) และกรองเฉพาะ active
 function isCarBusy(carId, fromDate, toDate) {
   if (!fromDate || !toDate) return false;
-  const f = normalizeDate(fromDate);
-  const t = normalizeDate(toDate);
-  return bookings.some(b => {
-    if (String(b.carId).trim() !== String(carId).trim()) return false;
-    if (String(b.status).trim().toLowerCase() !== 'active') return false;
-    const bF = normalizeDate(b.dateFrom);
-    const bT = normalizeDate(b.dateTo);
-    if (!bF || !bT) return false;
-    // overlap: newStart <= existEnd  AND  newEnd >= existStart
-    return f <= bT && t >= bF;
-  });
-}
-
-function getBusyInfo(carId, fromDate, toDate) {
-  if (!fromDate || !toDate) return null;
-  const f = normalizeDate(fromDate);
-  const t = normalizeDate(toDate);
-  return bookings.find(b => {
-    if (String(b.carId).trim() !== String(carId).trim()) return false;
-    if (String(b.status).trim().toLowerCase() !== 'active') return false;
-    const bF = normalizeDate(b.dateFrom);
-    const bT = normalizeDate(b.dateTo);
-    if (!bF || !bT) return false;
-    return f <= bT && t >= bF;
-  }) || null;
+  return bookings.some(b =>
+    b.carId === carId &&
+    b.status === 'active' &&
+    b.dateFrom <= toDate &&
+    b.dateTo   >= fromDate
+  );
 }
 
 function getLastInfo(carId) {
-  const id = String(carId).trim();
-  const base = bookings.filter(b =>
-    String(b.carId).trim() === id &&
-    (String(b.status).trim().toLowerCase()==='active' || String(b.status).trim().toLowerCase()==='returned')
-  );
+  // เอา returned ก่อน (มีเลขไมล์จริง) จากนั้นค่อย active
+  const base = bookings.filter(b => b.carId === carId && (b.status==='active' || b.status==='returned'));
+  // เรียงใหม่: returned มาก่อน, ถ้าเท่ากันเอา createdAt ล่าสุด
   const sorted = [...base].sort((a,b) => {
-    const as = String(a.status).trim().toLowerCase();
-    const bs = String(b.status).trim().toLowerCase();
-    if (as==='returned' && bs!=='returned') return -1;
-    if (bs==='returned' && as!=='returned') return  1;
+    if (a.status==='returned' && b.status!=='returned') return -1;
+    if (b.status==='returned' && a.status!=='returned') return  1;
     return (b.createdAt||'').localeCompare(a.createdAt||'');
   });
   if (sorted.length && sorted[0].floor && sorted[0].pillar) {
-    return { floor:sorted[0].floor, pillar:sorted[0].pillar, by:sorted[0].name, mileage:sorted[0].mileage||'' };
+    return {
+      floor:   sorted[0].floor,
+      pillar:  sorted[0].pillar,
+      by:      sorted[0].name,
+      mileage: sorted[0].mileage || ''
+    };
   }
-  return { floor:'ชั้น 1', pillar:'ลานจอดหลัก', by:'', mileage:'' };
+  return { floor:'ชั้น 1', pillar:'ลานจอดหลัก', by:'ระบบเริ่มต้น', mileage:'' };
 }
 
 // =============================================
 // JSONP ENGINE
 // =============================================
-function jsonpCall(params, onSuccess, onError, timeoutMs=15000) {
-  const cbName = '__jsonp_'+(++jsonpCounter)+'_'+Date.now();
-  const scriptId = 'jsonp_'+jsonpCounter;
+function jsonpCall(params, onSuccess, onError, timeoutMs=25000) {
+  const cbName = '__jsonp_' + (++jsonpCounter) + '_' + Date.now();
+  const scriptId = 'jsonp_' + jsonpCounter;
   let done = false;
-  const cleanup = ()=>{
-    done=true; clearTimeout(timer);
+
+  const cleanup = () => {
+    done = true;
+    clearTimeout(timer);
     delete window[cbName];
-    const s=document.getElementById(scriptId); if(s) s.remove();
+    const s = document.getElementById(scriptId);
+    if (s) s.remove();
   };
-  window[cbName] = function(data){
-    if(done) return; cleanup();
-    if(data && data.success) onSuccess(data);
-    else onError(data?(data.error||data.message||'Server error'):'No response');
+
+  window[cbName] = function(data) {
+    if (done) return;
+    cleanup();
+    if (data && data.success) onSuccess(data);
+    else onError(data ? (data.error||'Server error') : 'No response');
   };
-  const timer = setTimeout(()=>{
-    if(done) return; cleanup();
-    onError('Timeout — ตรวจสอบ GAS_URL');
+
+  const timer = setTimeout(() => {
+    if (done) return;
+    cleanup();
+    onError('Timeout — ตรวจสอบ GAS_URL และ deploy settings');
   }, timeoutMs);
-  const url = GAS_URL+'?'+params+'&callback='+cbName+'&_t='+Date.now();
+
+  const url = GAS_URL + '?' + params + '&callback=' + cbName + '&_t=' + Date.now();
   const script = document.createElement('script');
-  script.id=scriptId; script.src=url;
-  script.onerror=()=>{ if(done) return; cleanup(); onError('Script load error'); };
+  script.id = scriptId;
+  script.src = url;
+  script.onerror = () => {
+    if (done) return;
+    cleanup();
+    onError('Script load error — ตรวจสอบ URL');
+  };
   document.body.appendChild(script);
 }
 
 // =============================================
 // SYNC
 // =============================================
-function syncFromSheets(manual=false) {
+function syncFromSheets(manual=false, retryCount=0) {
   if (isSyncing) return;
   isSyncing = true;
   const btn = document.getElementById('sync-btn');
   if (btn) { btn.disabled=true; btn.textContent='⟳ กำลังซิงค์...'; }
-  if (manual) setSyncStatus('กำลังซิงค์...');
+  if (manual && retryCount===0) setSyncStatus('กำลังซิงค์...');
 
   jsonpCall('action=getBookings',
     (data) => {
       isSyncing = false;
       if (btn) { btn.disabled=false; btn.textContent='⟳ ซิงค์'; }
       bookings = data.bookings || [];
-
-      // Normalize ข้อมูลทุก booking หลัง sync
-      bookings.forEach(b => {
-        b.carId   = String(b.carId  ||'').trim();
-        b.status  = String(b.status ||'').trim().toLowerCase();
-        b.dateFrom= normalizeDate(b.dateFrom);
-        b.dateTo  = normalizeDate(b.dateTo);
-        // FIX #3: normalize phone — ถ้าเป็นตัวเลข 9 หลักให้เติม 0
-        if (b.phone !== undefined && b.phone !== null) {
-          const p = String(b.phone).trim();
-          if (/^\d{9}$/.test(p)) b.phone = '0'+p;
-          else b.phone = p;
-        }
-      });
-
       const now = new Date();
-      setSyncStatus('ซิงค์ล่าสุด '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds()));
-      // re-validate selCar หลัง sync
-      if (selCar && form.dateFrom && form.dateTo && isCarBusy(selCar, form.dateFrom, form.dateTo)) selCar = null;
+      setSyncStatus('ซิงค์ล่าสุด ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()));
       render();
-      if (manual) showToast('ซิงค์สำเร็จ ('+bookings.length+' รายการ) ✓');
+      if (manual) showToast('ซิงค์สำเร็จ (' + bookings.length + ' รายการ) ✓');
     },
     (err) => {
       isSyncing = false;
       if (btn) { btn.disabled=false; btn.textContent='⟳ ซิงค์'; }
-      setSyncStatus('ซิงค์ไม่สำเร็จ');
-      if (manual) showToast('ซิงค์ไม่สำเร็จ: '+err, true);
+      // retry ครั้งเดียวอัตโนมัติ (GAS cold start)
+      if (retryCount < 1) {
+        setSyncStatus('กำลังลองใหม่...');
+        setTimeout(() => syncFromSheets(manual, retryCount+1), 3000);
+        return;
+      }
+      setSyncStatus('ซิงค์ไม่สำเร็จ — กด ⟳ เพื่อลองใหม่');
+      if (manual) showToast('ซิงค์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', true);
     }
   );
 }
+
 function scheduleAutoSync() {
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(()=>{ syncFromSheets(false); scheduleAutoSync(); }, 60000);
+  syncTimer = setTimeout(() => { syncFromSheets(false); scheduleAutoSync(); }, 60000);
 }
 
 // =============================================
 // MODALS
 // =============================================
 function showModal(title, lines, onClose, opts={}) {
-  const c = document.getElementById('modal-container');
-  const tc = opts.warn?'modal-title warn':'modal-title';
-  c.innerHTML = `<div class="modal-overlay"><div class="modal-box" onclick="event.stopPropagation()">
-    <div class="${tc}">${title}</div>
-    ${lines.map(l=>`<div class="modal-line">${l}</div>`).join('')}
-    <button class="modal-btn ${opts.btnClass||''}" onclick="closeModal()">${opts.btnLabel||'รับทราบ'}</button>
-  </div></div>`;
-  window._modalCb = onClose||null;
-}
-function closeModal() {
-  document.getElementById('modal-container').innerHTML='';
-  if (window._modalCb){ window._modalCb(); window._modalCb=null; }
+  const container = document.getElementById('modal-container');
+  const titleClass = opts.warn ? 'modal-title warn' : 'modal-title';
+  const linesHTML = lines.map(l => `<div class="modal-line">${l}</div>`).join('');
+  const extraBtns = opts.extraBtns || '';
+  container.innerHTML = `
+    <div class="modal-overlay">
+      <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="${titleClass}">${title}</div>
+        ${linesHTML}
+        ${extraBtns}
+        <button class="modal-btn ${opts.btnClass||''}" onclick="closeModal()">${opts.btnLabel||'รับทราบ'}</button>
+      </div>
+    </div>`;
+  window._modalCb = onClose || null;
 }
 
-function askAdminPin(onSuccess) {
-  document.getElementById('modal-container').innerHTML = `
-    <div class="modal-overlay"><div class="modal-box" onclick="event.stopPropagation()" style="max-width:360px">
-      <div class="modal-title warn">🔐 ยืนยันสิทธิ์ Admin</div>
-      <div class="modal-line">การยกเลิกต้องได้รับอนุมัติจาก Admin เท่านั้น</div>
-      <div class="modal-line" style="margin-top:4px">กรุณาใส่รหัส Admin:</div>
-      <div class="pin-wrap">
-        <input type="password" id="admin-pin-input" maxlength="12" placeholder="••••••••"
-          inputmode="numeric" onkeydown="if(event.key==='Enter') confirmAdminPin()"/>
-      </div>
-      <div class="pin-err" id="pin-err">รหัสไม่ถูกต้อง กรุณาลองใหม่</div>
-      <button class="modal-btn red" style="margin-top:14px" onclick="confirmAdminPin()">✓ ยืนยัน</button>
-      <button class="modal-btn grey" onclick="closeModal()">ยกเลิก</button>
-    </div></div>`;
-  window._adminPinCb = onSuccess;
-  setTimeout(()=>{ const i=document.getElementById('admin-pin-input'); if(i) i.focus(); },100);
+function closeModal() {
+  document.getElementById('modal-container').innerHTML = '';
+  if (window._modalCb) { window._modalCb(); window._modalCb = null; }
 }
+
+// =============================================
+// ADMIN PIN MODAL — BUG4 FIX
+// =============================================
+function askAdminPin(onSuccess) {
+  const container = document.getElementById('modal-container');
+  container.innerHTML = `
+    <div class="modal-overlay">
+      <div class="modal-box" onclick="event.stopPropagation()" style="max-width:360px">
+        <div class="modal-title warn">🔐 ยืนยันสิทธิ์ Admin</div>
+        <div class="modal-line">การยกเลิกการจองต้องได้รับอนุมัติจาก Admin เท่านั้น</div>
+        <div class="modal-line" style="margin-top:4px">กรุณาใส่รหัส Admin:</div>
+        <div class="pin-wrap">
+          <input type="password" id="admin-pin-input" maxlength="12"
+            placeholder="••••••••" inputmode="numeric"
+            onkeydown="if(event.key==='Enter') confirmAdminPin()"/>
+        </div>
+        <div class="pin-err" id="pin-err">รหัสไม่ถูกต้อง กรุณาลองใหม่</div>
+        <button class="modal-btn red" style="margin-top:14px" onclick="confirmAdminPin()">✓ ยืนยัน</button>
+        <button class="modal-btn grey" onclick="closeModal()">ยกเลิก</button>
+      </div>
+    </div>`;
+  window._adminPinCb = onSuccess;
+  window._modalCb = null;
+  setTimeout(() => {
+    const inp = document.getElementById('admin-pin-input');
+    if (inp) inp.focus();
+  }, 100);
+}
+
 function confirmAdminPin() {
   const inp = document.getElementById('admin-pin-input');
-  const err = document.getElementById('pin-err');
+  const errEl = document.getElementById('pin-err');
   if (!inp) return;
   if (inp.value === ADMIN_PIN) {
     closeModal();
-    if (window._adminPinCb){ window._adminPinCb(); window._adminPinCb=null; }
+    if (window._adminPinCb) { window._adminPinCb(); window._adminPinCb = null; }
   } else {
-    err.style.display='block'; inp.value=''; inp.focus();
-    inp.style.borderColor='#c0392b';
-    setTimeout(()=>{ inp.style.borderColor='#ddd'; },1200);
+    errEl.style.display = 'block';
+    inp.value = '';
+    inp.focus();
+    inp.style.borderColor = '#c0392b';
+    setTimeout(() => { inp.style.borderColor = '#ddd'; }, 1200);
   }
 }
 
@@ -430,337 +385,300 @@ function confirmAdminPin() {
 // FORM ACTIONS
 // =============================================
 function captureForm() {
-  ['name','dept','phone','email','driver','purpose'].forEach(k=>{
+  ['name','dept','phone','email','driver','purpose'].forEach(k => {
     const el = document.getElementById('f-'+k);
     if (el) form[k] = el.value;
   });
 }
+
 function updateDates() {
   const fe = document.getElementById('f-from');
   const te = document.getElementById('f-to');
   if (fe) form.dateFrom = fe.value;
   if (te) form.dateTo   = te.value;
-  // รองรับจองวันเดียว: ถ้า to < from ให้ปรับ to = from
-  if (form.dateFrom && form.dateTo && form.dateTo < form.dateFrom) {
-    form.dateTo = form.dateFrom;
-    if (te) te.value = form.dateFrom;
-  }
   captureForm();
-  // re-validate selCar
-  if (selCar && form.dateFrom && form.dateTo && isCarBusy(selCar, form.dateFrom, form.dateTo)) selCar = null;
+  // BUG1 FIX: reset car selection ถ้าช่วงวันที่เปลี่ยนแล้วรถที่เลือกไว้ไม่ว่างแล้ว
+  if (selCar && isCarBusy(selCar, form.dateFrom, form.dateTo)) selCar = null;
   render();
 }
+
 function setSelCar(id) { captureForm(); selCar = id; render(); }
 function setTab(t) { captureForm(); tab = t; render(); }
 function setFilter(f) { filter = f; render(); }
 function selectReturn(id) { returnCarId = id; render(); }
-function calPrev()    { calMonth--; if(calMonth<0){calMonth=11;calYear--;} render(); }
-function calNext()    { calMonth++; if(calMonth>11){calMonth=0;calYear++;} render(); }
-function calGoToday() { calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); render(); }
 
 // =============================================
 // SUBMIT BOOKING
 // =============================================
 function submit() {
   captureForm();
-  if (!form.dateFrom || !form.dateTo) { showToast('ระบุวันที่ยืม-คืนก่อนครับ',true); return; }
-  if (form.dateTo < form.dateFrom)    { showToast('วันคืนต้องไม่ก่อนวันยืม',true); return; }
-  if (!selCar)                        { showToast('เลือกรถยนต์ก่อนครับ',true); return; }
+  if (!form.dateFrom || !form.dateTo) { showToast('ระบุวันที่ยืม-คืนก่อนครับ', true); return; }
+  if (form.dateFrom > form.dateTo)    { showToast('วันคืนต้องไม่ก่อนวันยืม', true); return; }
+  if (!selCar)                        { showToast('เลือกรถยนต์ก่อนครับ', true); return; }
 
-  // ซิงค์ล่าสุดก่อนส่ง แล้วเช็ค busy อีกครั้ง
+  // BUG1 FIX: double-check ตอน submit อีกครั้ง (ป้องกัน race condition)
   if (isCarBusy(selCar, form.dateFrom, form.dateTo)) {
-    const b = getBusyInfo(selCar, form.dateFrom, form.dateTo);
-    showToast('รถคันนี้ถูกจองในช่วงนี้แล้ว'+(b?' (โดย '+b.name+')':''), true);
-    selCar = null; render(); return;
+    showToast('รถคันนี้มีการจองในช่วงวันดังกล่าวแล้ว กรุณาซิงค์ข้อมูลและเลือกใหม่', true);
+    selCar = null;
+    render();
+    return;
   }
-  if (!form.name.trim())  { showToast('ระบุชื่อผู้ใช้งาน',true); return; }
-  if (!form.email.trim() || !form.email.includes('@')) { showToast('ระบุ Email ให้ถูกต้อง',true); return; }
-  if (!form.purpose.trim()) { showToast('ระบุวัตถุประสงค์',true); return; }
+
+  if (!form.name.trim())   { showToast('ระบุชื่อผู้ใช้งาน', true); return; }
+  if (!form.email.trim() || !form.email.includes('@')) { showToast('ระบุ Email ให้ถูกต้อง', true); return; }
+  if (!form.purpose.trim()) { showToast('ระบุวัตถุประสงค์', true); return; }
 
   const info = getLastInfo(selCar);
   const car  = CARS.find(c => c.id === selCar);
   const id   = Date.now().toString();
   const now  = new Date().toISOString();
 
-  // FIX #3: ส่ง phone เป็น string (ใส่ ' นำหน้าเพื่อ prevent Sheets แปลงเป็นตัวเลข)
-  const phoneVal = form.phone.trim();
-
   const params = [
     'action=addBooking',
-    'id='       +encodeURIComponent(id),
-    'carId='    +encodeURIComponent(selCar),   // FIX #2: ส่งทะเบียน
-    'name='     +encodeURIComponent(form.name.trim()),
-    'dept='     +encodeURIComponent(form.dept.trim()),
-    'phone='    +encodeURIComponent(phoneVal),
-    'driver='   +encodeURIComponent(form.driver.trim()),
-    'email='    +encodeURIComponent(form.email.trim()),
-    'dateFrom=' +encodeURIComponent(form.dateFrom),
-    'dateTo='   +encodeURIComponent(form.dateTo),
-    'purpose='  +encodeURIComponent(form.purpose.trim()),
-    'floor='    +encodeURIComponent(info.floor),
-    'pillar='   +encodeURIComponent(info.pillar),
+    'id='       + encodeURIComponent(id),
+    'carId='    + encodeURIComponent(selCar),
+    'name='     + encodeURIComponent(form.name.trim()),
+    'dept='     + encodeURIComponent(form.dept.trim()),
+    'phone='    + encodeURIComponent(form.phone.trim()),
+    'driver='   + encodeURIComponent(form.driver.trim()),
+    'email='    + encodeURIComponent(form.email.trim()),
+    'dateFrom=' + encodeURIComponent(form.dateFrom),
+    'dateTo='   + encodeURIComponent(form.dateTo),
+    'purpose='  + encodeURIComponent(form.purpose.trim()),
+    'floor='    + encodeURIComponent(info.floor),
+    'pillar='   + encodeURIComponent(info.pillar),
     'status=active',
-    'createdAt='+encodeURIComponent(now),
+    'createdAt='+ encodeURIComponent(now),
   ].join('&');
 
-  setLoading(true,'กำลังบันทึกการจอง...');
+  setLoading(true, 'กำลังบันทึกการจอง...');
+
   jsonpCall(params,
-    ()=>{
+    () => {
       setLoading(false);
-      showModal('🎉 ส่งคำขอจองสำเร็จ!',[
+      syncFromSheets(false);
+
+      // แสดง modal ยืนยันการจอง
+      showModal('🎉 ส่งคำขอจองสำเร็จ!', [
         `<b>🚗 รถทะเบียน:</b> ${car.plate} (${car.name})`,
         `<b>👤 ผู้จอง:</b> ${esc(form.name)}`,
         `<b>📅 วันยืม:</b> ${form.dateFrom} &nbsp;→&nbsp; <b>วันคืน:</b> ${form.dateTo}`,
         `<b>🅿️ พิกัดรับรถ:</b> <span style="color:#1D9E75;font-weight:600">${esc(info.floor)} เสา ${esc(info.pillar)}</span>`,
-        `<br><small style="color:#aaa">✉️ ส่งข้อมูลไปที่อีเมลของคุณเรียบร้อย</small>`,
-      ],()=>{ showReminderModal(car,info); });
-      form={name:'',dept:'',phone:'',dateFrom:'',dateTo:'',purpose:'',driver:'',email:''};
-      selCar=null;
+        `<small style="color:#888">⚠️ จุดจอดอ้างอิงจากผู้ใช้ล่าสุด (${esc(info.by)})</small>`,
+        `<br><small style="color:#aaa">✉️ กำลังส่งยืนยันไปที่อีเมลของคุณ</small>`,
+      ], () => {
+        // BUG3: หลัง modal แรกปิด ให้แสดง modal แจ้งเตือนเลขไมล์และที่จอด
+        showReminderModal(car, info);
+      });
+
+      form = {name:'',dept:'',phone:'',dateFrom:'',dateTo:'',purpose:'',driver:'',email:''};
+      selCar = null;
     },
-    (err)=>{
+    (err) => {
       setLoading(false);
-      showToast(err,true);
-      syncFromSheets(false);
+      showToast('บันทึกไม่สำเร็จ: ' + err, true);
     }
   );
 }
 
+// BUG3: Modal แจ้งเตือนแยกหลังจองสำเร็จ
 function showReminderModal(car, info) {
-  const mt = info.mileage
-    ? `เลขไมล์ล่าสุด: <b style="color:#185FA5">${esc(info.mileage)} กม.</b>`
+  const mileageText = info.mileage
+    ? `เลขไมล์ล่าสุดที่บันทึกไว้: <b style="color:#185FA5">${esc(info.mileage)} กม.</b>`
     : `เลขไมล์ล่าสุด: <b style="color:#888">ยังไม่มีข้อมูล</b>`;
-  document.getElementById('modal-container').innerHTML=`
-    <div class="modal-overlay"><div class="modal-box" onclick="event.stopPropagation()">
-      <div class="modal-title" style="color:#b07800">⚠️ อย่าลืมนะ! ก่อนรับรถ</div>
-      <div style="background:#FFF8E7;border:1px solid #F5C842;border-radius:10px;padding:14px;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:600;color:#7a5c00;margin-bottom:10px">
-          📋 ข้อมูลรถ ${esc(car.name)} ทะเบียน ${esc(car.plate)}:
+
+  const container = document.getElementById('modal-container');
+  container.innerHTML = `
+    <div class="modal-overlay">
+      <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-title" style="color:#b07800">⚠️ อย่าลืมนะ! ก่อนรับรถ</div>
+        <div style="background:#FFF8E7;border:1px solid #F5C842;border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:600;color:#7a5c00;margin-bottom:10px">
+            📋 ข้อมูลรถ ${esc(car.name)} ทะเบียน ${esc(car.plate)} ที่ต้องตรวจสอบ:
+          </div>
+          <div style="font-size:12px;color:#5a4200;margin-bottom:7px">
+            🅿️ <b>จุดจอดปัจจุบัน:</b> ${esc(info.floor)} เสา ${esc(info.pillar)}
+            <span style="color:#888;font-size:10px"> (อ้างอิงจาก ${esc(info.by)})</span>
+          </div>
+          <div style="font-size:12px;color:#5a4200;margin-bottom:7px">
+            🔢 <b>${mileageText}</b>
+          </div>
+          <div style="border-top:1px solid #f5c842;margin:10px 0 8px"></div>
+          <div style="font-size:11px;color:#7a5c00;line-height:1.6">
+            ✅ กรุณาจำ <b>ที่จอดรถตอนรับ</b> เพื่อแจ้งในระบบตอนจอดคืน<br>
+            ✅ กรุณาจด <b>เลขไมล์ตอนรับรถ</b> เพื่อกรอกตอนคืนรถด้วย
+          </div>
         </div>
-        <div style="font-size:12px;color:#5a4200;margin-bottom:7px">
-          🅿️ <b>จุดจอดปัจจุบัน:</b> ${esc(info.floor)} เสา ${esc(info.pillar)}
-        </div>
-        <div style="font-size:12px;color:#5a4200">🔢 <b>${mt}</b></div>
+        <button class="modal-btn" onclick="closeModalReminder()">รับทราบแล้ว ✓</button>
       </div>
-      <button class="modal-btn" onclick="closeModalReminder()">รับทราบแล้ว ✓</button>
-    </div></div>`;
+    </div>`;
+  window._modalCb = null;
 }
+
 function closeModalReminder() {
-  document.getElementById('modal-container').innerHTML='';
-  tab='list'; syncFromSheets(false);
+  document.getElementById('modal-container').innerHTML = '';
+  tab = 'list';
+  render();
 }
 
 // =============================================
-// RETURN CAR
+// EXECUTE RETURN — BUG2: เพิ่มเลขไมล์
 // =============================================
 function executeReturn(id) {
-  const fv = (document.getElementById('ret-floor')   ||{}).value||'';
-  const pv = (document.getElementById('ret-pillar')  ||{}).value||'';
-  const mv = (document.getElementById('ret-mileage') ||{}).value||'';
-  if (!fv.trim()) { showToast('ระบุชั้นที่จอดคืน',true); return; }
-  if (!pv.trim()) { showToast('ระบุเลขเสาที่จอดคืน',true); return; }
-  if (!mv.trim()) { showToast('ระบุเลขไมล์สุดท้ายก่อนคืนรถ',true); return; }
-  if (isNaN(Number(mv))) { showToast('เลขไมล์ต้องเป็นตัวเลข',true); return; }
-  const b = bookings.find(x=>x.id==id);
-  const car = b?CARS.find(c=>c.id===b.carId):null;
-  if (!b){ showToast('ไม่พบรายการจอง',true); return; }
-  const params=['action=updateStatus','id='+encodeURIComponent(id),'status=returned',
-    'floor='+encodeURIComponent(fv.trim()),
-    'pillar='+encodeURIComponent(pv.trim()),
-    'mileage='+encodeURIComponent(mv.trim())].join('&');
-  setLoading(true,'กำลังบันทึกการคืนรถ...');
+  const floorVal   = (document.getElementById('ret-floor')   || {}).value || '';
+  const pillarVal  = (document.getElementById('ret-pillar')  || {}).value || '';
+  const mileageVal = (document.getElementById('ret-mileage') || {}).value || '';
+
+  if (!floorVal.trim())   { showToast('ระบุชั้นที่จอดคืน', true); return; }
+  if (!pillarVal.trim())  { showToast('ระบุเลขเสาที่จอดคืน', true); return; }
+  if (!mileageVal.trim()) { showToast('ระบุเลขไมล์สุดท้ายก่อนคืนรถ', true); return; }
+  if (isNaN(Number(mileageVal))) { showToast('เลขไมล์ต้องเป็นตัวเลขเท่านั้น', true); return; }
+
+  const b   = bookings.find(x => x.id === id);
+  const car = b ? CARS.find(c => c.id === b.carId) : null;
+  if (!b) { showToast('ไม่พบรายการจอง', true); return; }
+
+  const params = [
+    'action=updateStatus',
+    'id='      + encodeURIComponent(id),
+    'status=returned',
+    'floor='   + encodeURIComponent(floorVal.trim()),
+    'pillar='  + encodeURIComponent(pillarVal.trim()),
+    'mileage=' + encodeURIComponent(mileageVal.trim()),
+  ].join('&');
+
+  setLoading(true, 'กำลังบันทึกการคืนรถ...');
   jsonpCall(params,
-    ()=>{
-      setLoading(false); returnCarId=null;
-      showModal('✅ คืนรถสำเร็จ!',[
-        `<b>🚗 รถทะเบียน:</b> ${car?car.plate:''}`,
+    () => {
+      setLoading(false);
+      returnCarId = null;
+      syncFromSheets(false);
+      showModal('✅ คืนรถสำเร็จ!', [
+        `<b>🚗 รถทะเบียน:</b> ${car ? car.plate : ''}`,
         `<b>👤 ผู้คืน:</b> ${esc(b.name)}`,
-        `<b>🅿️ จอดคืนที่:</b> ${esc(fv.trim())} เสา ${esc(pv.trim())}`,
-        `<b>🔢 เลขไมล์สุดท้าย:</b> <span style="color:#185FA5;font-weight:600">${esc(mv.trim())} กม.</span>`,
-      ],()=>{ tab='list'; syncFromSheets(false); });
+        `<b>🅿️ จอดคืนที่:</b> ${esc(floorVal.trim())} เสา ${esc(pillarVal.trim())}`,
+        `<b>🔢 เลขไมล์สุดท้าย:</b> <span style="color:#185FA5;font-weight:600">${esc(mileageVal.trim())} กม.</span>`,
+        `<br><small style="color:#aaa">✉️ ระบบส่งสรุปไปที่อีเมลแล้ว</small>`,
+      ], () => { tab = 'list'; render(); });
     },
-    (err)=>{ setLoading(false); showToast('บันทึกไม่สำเร็จ: '+err,true); }
+    (err) => {
+      setLoading(false);
+      showToast('บันทึกไม่สำเร็จ: ' + err, true);
+    }
   );
 }
+
+// =============================================
+// CANCEL — BUG4: ต้องใส่ PIN admin ก่อน
+// =============================================
 function cancelBook(id) {
-  askAdminPin(()=>{
-    const params='action=updateStatus&id='+encodeURIComponent(id)+'&status=cancelled';
-    setLoading(true,'กำลังยกเลิก...');
+  askAdminPin(() => {
+    // PIN ถูกต้อง → ดำเนินการยกเลิก
+    const params = 'action=updateStatus&id=' + encodeURIComponent(id) + '&status=cancelled';
+    setLoading(true, 'กำลังยกเลิก...');
     jsonpCall(params,
-      ()=>{ setLoading(false); syncFromSheets(false); showToast('ยกเลิกการจองสำเร็จ ✓'); },
-      (err)=>{ setLoading(false); showToast('ยกเลิกไม่สำเร็จ: '+err,true); }
+      () => { setLoading(false); syncFromSheets(false); showToast('ยกเลิกการจองสำเร็จ ✓'); },
+      (err) => { setLoading(false); showToast('ยกเลิกไม่สำเร็จ: ' + err, true); }
     );
   });
 }
 
 // =============================================
-// MONTHLY CALENDAR
-// FIX #4: แสดง chip ทุกวันที่ตกอยู่ใน booking range
+// CALENDAR
 // =============================================
-function generateMonthlyCalendar() {
-  const thMonths=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
-                  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  const dayHdr=['จ','อ','พ','พฤ','ศ','ส','อา'];
-  const today = todayStr();
+function generateCalendar() {
+  const today = new Date();
+  const dow = today.getDay();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - (dow===0 ? 6 : dow-1));
 
-  const firstDay = new Date(calYear, calMonth, 1);
-  let startOffset = firstDay.getDay()===0 ? 6 : firstDay.getDay()-1;
-  const gridStart = new Date(firstDay);
-  gridStart.setDate(1 - startOffset);
+  const dayNames = ['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์','อาทิตย์'];
+  let html = `<div style="overflow-x:auto"><table class="cal-table">
+    <thead><tr>
+      <th style="width:68px">วันที่</th>
+      <th>🚗 ทะเบียน 1723</th>
+      <th>🚗 ทะเบียน 7902</th>
+    </tr></thead><tbody>`;
 
-  let html = `
-    <div class="cal-nav">
-      <button class="cal-nav-btn" onclick="calPrev()">‹</button>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="cal-nav-title">${thMonths[calMonth]} ${calYear+543}</span>
-        <button class="cal-today-btn" onclick="calGoToday()">วันนี้</button>
-      </div>
-      <button class="cal-nav-btn" onclick="calNext()">›</button>
-    </div>
-    <div class="cal-grid">`;
-
-  // header row
-  dayHdr.forEach((d,i)=>{
-    let cls='cal-header-cell';
-    if(i===5) cls+=' sat';
-    if(i===6) cls+=' sun';
-    html+=`<div class="${cls}">${d}</div>`;
-  });
-
-  // 42 cells
-  for(let r=0;r<6;r++){
-    for(let c=0;c<7;c++){
-      const cd = new Date(gridStart);
-      cd.setDate(gridStart.getDate()+r*7+c);
-      const ds = cd.getFullYear()+'-'+pad(cd.getMonth()+1)+'-'+pad(cd.getDate());
-      const isThisMonth = cd.getMonth()===calMonth;
-      const isToday     = ds===today;
-
-      // FIX #4: ใช้ทะเบียนตรง (id=plate) หาการจองในวันนั้น
-      const bks1 = bookings.filter(b=>
-        String(b.carId).trim()==='1723' &&
-        String(b.status).trim().toLowerCase()==='active' &&
-        ds >= normalizeDate(b.dateFrom) && ds <= normalizeDate(b.dateTo)
-      );
-      const bks2 = bookings.filter(b=>
-        String(b.carId).trim()==='7902' &&
-        String(b.status).trim().toLowerCase()==='active' &&
-        ds >= normalizeDate(b.dateFrom) && ds <= normalizeDate(b.dateTo)
-      );
-      const hasBk = bks1.length>0||bks2.length>0;
-
-      let cls='cal-cell';
-      if(!isThisMonth) cls+=' other-month';
-      if(isToday)      cls+=' today-cell';
-      if(c===5)        cls+=' sat-cell';
-      if(c===6)        cls+=' sun-cell';
-      if(hasBk)        cls+=' has-booking';
-
-      let chips='';
-      bks1.forEach(b=>{
-        chips+=`<span class="cal-chip chip-1723">🚗1723: ${esc(b.name)}</span>`;
-      });
-      bks2.forEach(b=>{
-        chips+=`<span class="cal-chip chip-7902">🚗7902: ${esc(b.name)}</span>`;
-      });
-
-      html+=`<div class="${cls}">
-        <span class="cal-day-num">${cd.getDate()}</span>
-        ${chips}
-      </div>`;
-    }
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const ds = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    const isToday = ds === todayStr();
+    const c1 = bookings.filter(b => b.carId==='CAR1' && b.status==='active' && ds>=b.dateFrom && ds<=b.dateTo);
+    const c2 = bookings.filter(b => b.carId==='CAR2' && b.status==='active' && ds>=b.dateFrom && ds<=b.dateTo);
+    const fmt = b => `<div class="cal-booked-box"><b>${esc(b.name)}</b><br>${esc(b.purpose)}</div>`;
+    html += `<tr ${isToday ? 'class="cal-today"' : ''}>
+      <td><span class="cal-day-num">${d.getDate()}/${d.getMonth()+1}</span>
+          <span style="font-size:10px;color:#999">${dayNames[i]}</span></td>
+      <td>${c1.map(fmt).join('') || '<span style="color:#ccc;font-size:11px">ว่าง</span>'}</td>
+      <td>${c2.map(fmt).join('') || '<span style="color:#ccc;font-size:11px">ว่าง</span>'}</td>
+    </tr>`;
   }
-
-  html+=`</div>
-    <div class="cal-legend">
-      <span><span style="background:#d4edde;color:#0a5c40;padding:1px 7px;border-radius:3px;font-weight:600">■</span>&nbsp;ทะเบียน 1723</span>
-      <span><span style="background:#d4e4ff;color:#1a3c8a;padding:1px 7px;border-radius:3px;font-weight:600">■</span>&nbsp;ทะเบียน 7902</span>
-    </div>`;
-  return html;
+  return html + '</tbody></table></div>';
 }
 
 // =============================================
 // RENDER
 // =============================================
 function render() {
-  const ts = todayStr();
-  const todayActiveCt = CARS.filter(c=>
-    bookings.some(b=>
-      String(b.carId).trim()===c.id &&
-      String(b.status).trim().toLowerCase()==='active' &&
-      normalizeDate(b.dateFrom)<=ts && normalizeDate(b.dateTo)>=ts
-    )
+  const todayActiveCt = CARS.filter(c =>
+    bookings.some(b => b.carId===c.id && b.status==='active' && b.dateFrom<=todayStr() && b.dateTo>=todayStr())
   ).length;
-  const availToday  = CARS.length - todayActiveCt;
-  const activeCount = bookings.filter(b=>String(b.status).trim().toLowerCase()==='active').length;
+  const availToday = CARS.length - todayActiveCt;
+  const activeCount = bookings.filter(b => b.status==='active').length;
 
-  const stats=`<div class="stat-row">
+  const stats = `<div class="stat-row">
     <div class="stat"><div class="sl">รถว่างวันนี้</div><div class="sv ${availToday>0?'green':'red'}">${availToday} / ${CARS.length} คัน</div></div>
     <div class="stat"><div class="sl">กำลังใช้งาน</div><div class="sv">${activeCount}</div></div>
-    <div class="stat"><div class="sl">ทั้งหมดในระบบ</div><div class="sv">${bookings.filter(b=>String(b.status).trim().toLowerCase()!=='cancelled').length}</div></div>
+    <div class="stat"><div class="sl">ทั้งหมดในระบบ</div><div class="sv">${bookings.filter(b=>b.status!=='cancelled').length}</div></div>
   </div>`;
 
-  const tabBar=`<div class="tabs">
+  const tabBar = `<div class="tabs">
     <button class="tab ${tab==='form'?'on':''}"     onclick="setTab('form')">+ จองรถ</button>
     <button class="tab ${tab==='return'?'on':''}"   onclick="setTab('return')">🔑 คืนรถ</button>
     <button class="tab ${tab==='calendar'?'on':''}" onclick="setTab('calendar')">📅 ตาราง</button>
     <button class="tab ${tab==='list'?'on':''}"     onclick="setTab('list')">ประวัติ</button>
   </div>`;
 
-  let content='';
+  let content = '';
 
-  // ---- FORM TAB ----
-  if (tab==='form') {
+  // -------- TAB: FORM --------
+  if (tab === 'form') {
     const hasDates = form.dateFrom && form.dateTo;
-    const carCards = CARS.map(car=>{
-      const busy     = hasDates ? isCarBusy(car.id, form.dateFrom, form.dateTo) : false;
-      const busyInfo = busy ? getBusyInfo(car.id, form.dateFrom, form.dateTo) : null;
-      const sel      = selCar===car.id;
-      const info     = getLastInfo(car.id);
-      const mileText = info.mileage ? `🔢 เลขไมล์: ${esc(info.mileage)} กม.` : '🔢 ยังไม่มีข้อมูลเลขไมล์';
-
-      if (busy) {
-        // บัตรเทา กดไม่ได้
-        return `<div class="car-opt busy-car">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="car-icon" style="filter:grayscale(1) opacity(.5)">${car.icon}</span>
-            <span class="cbadge busy-b">ไม่ว่าง</span>
-          </div>
-          <div class="cn" style="color:#aaa">${car.name}</div>
-          <div class="cp">ทะเบียน ${car.plate}</div>
-          <div class="busy-who">🔒 ${busyInfo ? 'จองโดย: '+esc(busyInfo.name) : 'ไม่ว่างในช่วงนี้'}</div>
-          ${busyInfo ? `<div class="busy-who">📅 ${busyInfo.dateFrom} – ${busyInfo.dateTo}</div>` : ''}
-        </div>`;
-      } else {
-        return `<div class="car-opt ${sel?'selected':''}" onclick="setSelCar('${car.id}')">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="car-icon">${car.icon}</span>
-            <span class="cbadge avail-b">ว่าง</span>
-          </div>
-          <div class="cn">${car.name}</div>
-          <div class="cp">ทะเบียน ${car.plate}</div>
-          <div class="location-tag">📍 ${esc(info.floor)} เสา ${esc(info.pillar)}</div>
-          <div class="mileage-tag">${mileText}</div>
-        </div>`;
-      }
+    const carCards = CARS.map(car => {
+      const busy = hasDates ? isCarBusy(car.id, form.dateFrom, form.dateTo) : false;
+      const sel  = selCar === car.id;
+      const info = getLastInfo(car.id);
+      const mileText = info.mileage ? `🔢 เลขไมล์ล่าสุด: ${esc(info.mileage)} กม.` : '🔢 ยังไม่มีข้อมูลเลขไมล์';
+      return `<div class="car-opt ${sel?'selected':''} ${busy?'busy-car':''}"
+          onclick="${busy ? "showToast('รถคันนี้ไม่ว่างในช่วงนั้น',true)" : `setSelCar('${car.id}')`}">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="car-icon">${car.icon}</span>
+          <span class="cbadge ${busy?'busy-b':'avail-b'}">${busy?'ไม่ว่าง':'ว่าง'}</span>
+        </div>
+        <div class="cn">${car.name}</div>
+        <div class="cp">ทะเบียน ${car.plate}</div>
+        <div class="location-tag">📍 ${esc(info.floor)} เสา ${esc(info.pillar)}</div>
+        <div class="mileage-tag">${mileText}</div>
+      </div>`;
     }).join('');
 
-    content=`
+    content = `
       <div class="card">
         <div class="card-title">📅 1. วันที่ยืม-คืน</div>
         <div class="grid2">
           <div class="field"><label>วันที่ยืม <span class="req">*</span></label>
-            <input id="f-from" type="date" value="${form.dateFrom}" min="${ts}" onchange="updateDates()"/></div>
+            <input id="f-from" type="date" value="${form.dateFrom}" min="${todayStr()}" onchange="updateDates()"/></div>
           <div class="field"><label>วันที่คืน <span class="req">*</span></label>
-            <input id="f-to" type="date" value="${form.dateTo}" min="${form.dateFrom||ts}" onchange="updateDates()"/></div>
+            <input id="f-to" type="date" value="${form.dateTo}" min="${form.dateFrom||todayStr()}" onchange="updateDates()"/></div>
         </div>
-        ${hasDates&&form.dateFrom===form.dateTo
-          ?`<div style="font-size:11px;color:#1D9E75;background:#f0faf6;padding:6px 10px;border-radius:6px;margin-top:-4px">📌 จองใช้งานวันเดียว (${form.dateFrom})</div>`:''}
       </div>
       <div class="card">
         <div class="card-title">🚗 2. เลือกรถยนต์</div>
         ${hasDates
-          ?`<div class="car-sel">${carCards}</div>`
-          :`<div class="empty" style="padding:1rem">💡 เลือกวันที่ก่อนเพื่อดูสถานะรถ</div>`}
+          ? `<div class="car-sel">${carCards}</div>`
+          : `<div class="empty" style="padding:1rem">💡 เลือกวันที่ก่อนเพื่อดูสถานะรถ</div>`}
       </div>
       <div class="card">
         <div class="card-title">👤 3. ข้อมูลผู้จอง</div>
@@ -784,102 +702,111 @@ function render() {
       <button class="submit-btn" onclick="submit()">✓ ยืนยันคำขอจอง</button>`;
   }
 
-  // ---- RETURN TAB ----
-  else if (tab==='return') {
-    const actives = bookings.filter(b=>String(b.status).trim().toLowerCase()==='active');
-    if (actives.length===0) {
-      content=`<div class="card"><div class="card-title">🔑 แจ้งคืนรถส่วนกลาง</div>
+  // -------- TAB: RETURN --------
+  else if (tab === 'return') {
+    const actives = bookings.filter(b => b.status === 'active');
+    if (actives.length === 0) {
+      content = `<div class="card"><div class="card-title">🔑 แจ้งคืนรถส่วนกลาง</div>
         <div class="empty">ขณะนี้ไม่มีรถถูกใช้งานอยู่</div></div>`;
     } else {
-      if (!returnCarId || !actives.find(b=>b.id===returnCarId)) returnCarId=actives[0].id;
-      const sel = actives.find(b=>b.id===returnCarId);
-      const carOpts = actives.map(b=>{
-        const c=CARS.find(x=>x.id===b.carId)||{name:b.carId,plate:b.carId};
-        return `<option value="${b.id}" ${b.id===returnCarId?'selected':''}>${c.name} (${c.plate}) - จองโดย ${esc(b.name)}</option>`;
+      if (!returnCarId || !actives.find(b => b.id === returnCarId)) returnCarId = actives[0].id;
+      const sel = actives.find(b => b.id === returnCarId);
+      const opts = actives.map(b => {
+        const c = CARS.find(x => x.id === b.carId);
+        return `<option value="${b.id}" ${b.id===returnCarId?'selected':''}>${c?c.plate:''} — ${esc(b.name)} (${b.dateFrom})</option>`;
       }).join('');
-      content=`
-        <div class="card">
-          <div class="card-title">🔑 แจ้งคืนรถยนต์ส่วนกลาง</div>
-          <div class="field"><label>เลือกรายการรถที่ต้องการคืน</label>
-            <select id="ret-id" onchange="selectReturn(this.value)">${carOpts}</select></div>
-          <div style="background:#f4f4f0;padding:12px;border-radius:8px;margin-bottom:12px;font-size:12px">
-            <div><b>📅 กำหนดใช้งาน:</b> ${sel.dateFrom||'-'} ถึง ${sel.dateTo||'-'}</div>
-            <div><b>👤 ผู้ยืม:</b> ${esc(sel.name)} (${esc(sel.dept||'-')})</div>
-            <div><b>💡 วัตถุประสงค์:</b> ${esc(sel.purpose)}</div>
-          </div>
-          <div class="grid2">
-            <div class="field"><label>คืนที่ชั้น <span class="req">*</span></label>
-              <input id="ret-floor" type="text" placeholder="เช่น ชั้น 1"/></div>
-            <div class="field"><label>เสาที่จอดคืน <span class="req">*</span></label>
-              <input id="ret-pillar" type="text" placeholder="เช่น A5"/></div>
-          </div>
-          <div class="field"><label>เลขไมล์สุดท้ายก่อนคืนรถ <span class="req">*</span></label>
-            <input id="ret-mileage" type="number" inputmode="numeric" placeholder="โปรดดูที่หน้าปัดรถยนต์จริง"/></div>
+      content = `<div class="card">
+        <div class="card-title">🔑 แจ้งคืนรถส่วนกลาง</div>
+        <div class="field">
+          <label>เลือกรายการที่ต้องการคืน <span class="req">*</span></label>
+          <select onchange="selectReturn(this.value)">${opts}</select>
         </div>
-        <button class="submit-btn blue" onclick="executeReturn('${sel.id}')">✓ ยืนยันบันทึกการคืนรถ</button>`;
+        ${sel ? `
+        <div style="background:#f9f9f9;padding:12px;border-radius:8px;margin-bottom:14px;font-size:12px;border-left:4px solid #1D9E75">
+          <b>📋 รายละเอียดการจอง:</b><br>
+          ผู้ใช้: ${esc(sel.name)} &nbsp;|&nbsp; แผนก: ${esc(sel.dept||'-')}<br>
+          วัตถุประสงค์: ${esc(sel.purpose)}
+        </div>
+        <div class="card-title">🅿️ ระบุตำแหน่งจอดคืน</div>
+        <div class="grid2">
+          <div class="field"><label>ชั้นที่จอด <span class="req">*</span></label>
+            <input id="ret-floor" type="text" placeholder="เช่น ชั้น 3, ลานจอดด้านข้าง"/></div>
+          <div class="field"><label>เลขเสาใกล้ที่สุด <span class="req">*</span></label>
+            <input id="ret-pillar" type="text" placeholder="เช่น A12, B3"/></div>
+        </div>
+        <div class="field">
+          <label>🔢 เลขไมล์สุดท้าย (ก่อนคืนรถ) <span class="req">*</span></label>
+          <input id="ret-mileage" type="number" min="0" placeholder="เช่น 45230" style="font-size:15px;font-weight:600"/>
+          <small style="color:#888;font-size:11px;margin-top:2px">กรอกเลขไมล์ที่หน้าปัดรถแสดง ณ ตอนนำรถมาจอดคืน</small>
+        </div>
+        <button class="submit-btn blue" onclick="executeReturn('${sel.id}')">🔒 บันทึกและคืนรถ</button>
+        ` : ''}
+      </div>`;
     }
   }
 
-  // ---- CALENDAR TAB ----
-  else if (tab==='calendar') {
-    content=`<div class="card">
-      <div class="card-title">📅 ตารางการใช้งานรายเดือน</div>
-      ${generateMonthlyCalendar()}
+  // -------- TAB: CALENDAR --------
+  else if (tab === 'calendar') {
+    content = `<div class="card"><div class="card-title">📅 ตารางการใช้รถสัปดาห์นี้</div>${generateCalendar()}</div>`;
+  }
+
+  // -------- TAB: LIST --------
+  else {
+    const filterBar = `<div class="filter-bar">
+      <button class="filter-btn ${filter==='all'?'on':''}"       onclick="setFilter('all')">ทั้งหมด</button>
+      <button class="filter-btn ${filter==='active'?'on':''}"    onclick="setFilter('active')">กำลังใช้งาน</button>
+      <button class="filter-btn ${filter==='returned'?'on':''}"  onclick="setFilter('returned')">คืนแล้ว</button>
+      <button class="filter-btn ${filter==='cancelled'?'on':''}" onclick="setFilter('cancelled')">ยกเลิกแล้ว</button>
     </div>`;
+
+    const filtered = filter === 'all'
+      ? bookings.filter(b => b.status !== 'cancelled')
+      : bookings.filter(b => b.status === filter);
+    const sorted = [...filtered].sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+
+    const rows = sorted.length === 0
+      ? `<div class="empty">ไม่มีรายการ</div>`
+      : sorted.map(b => {
+          const car = CARS.find(c => c.id === b.carId);
+          const label = b.status==='active' ? 'กำลังใช้งาน' : b.status==='returned' ? 'คืนแล้ว' : 'ยกเลิก';
+          // BUG4: ปุ่มยกเลิกมีอยู่ แต่กดแล้วต้องใส่ PIN
+          return `<div class="brow">
+            <div class="brow-top">
+              <div>
+                <div class="brow-name">${esc(b.name)} ${b.dept?`<span style="font-weight:400;color:#888">· ${esc(b.dept)}</span>`:''}</div>
+                <div class="brow-car">${car?car.icon+' '+car.name+' ('+car.plate+')':b.carId}${b.phone?' · '+esc(b.phone):''}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                <span class="badge ${b.status}">${label}</span>
+                ${b.status==='active' ? `<button class="cancel-btn" onclick="cancelBook('${b.id}')">🔐 ยกเลิก</button>` : ''}
+              </div>
+            </div>
+            <div class="brow-grid">
+              <div><div class="brow-field">วันยืม</div><div class="brow-val">${b.dateFrom}</div></div>
+              <div><div class="brow-field">วันคืน</div><div class="brow-val">${b.dateTo}</div></div>
+              <div><div class="brow-field">ที่จอด</div><div class="brow-val">${esc(b.floor||'-')} ${b.pillar?'เสา '+esc(b.pillar):''}</div></div>
+            </div>
+            ${b.mileage ? `<div style="margin-top:5px;font-size:11px;color:#185FA5">🔢 เลขไมล์คืนรถ: <b>${esc(b.mileage)} กม.</b></div>` : ''}
+            ${b.purpose ? `<div style="margin-top:4px;font-size:11px;color:#888">📌 ${esc(b.purpose)}</div>` : ''}
+          </div>`;
+        }).join('');
+
+    content = filterBar + rows;
   }
 
-  // ---- LIST TAB ----
-  else if (tab==='list') {
-    let listData=[...bookings].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
-    if (filter!=='all') listData=listData.filter(b=>String(b.status).trim().toLowerCase()===filter);
-    const cards=listData.map(b=>{
-      const car=CARS.find(c=>c.id===b.carId)||{icon:'🚗',name:b.carId,plate:b.carId};
-      const statusKey=String(b.status).trim().toLowerCase();
-      const st=statusKey==='active'?'กำลังจอง':statusKey==='returned'?'คืนรถแล้ว':'ยกเลิกแล้ว';
-      const badgeCls=statusKey==='active'?'active':statusKey==='returned'?'returned':'cancelled';
-      return `<div class="brow">
-        <div class="brow-top">
-          <div>
-            <div class="brow-name">${esc(b.name)} <small style="color:#666;font-weight:400">(${esc(b.dept||'ไม่ระบุ')})</small></div>
-            <div class="brow-car">${car.icon} ${car.name} (ทะเบียน ${car.plate})</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-            <span class="badge ${badgeCls}">${st}</span>
-            ${statusKey==='active'?`<button class="cancel-btn" onclick="cancelBook('${b.id}')">ยกเลิก</button>`:''}
-          </div>
-        </div>
-        <div class="brow-grid">
-          <div><div class="brow-field">วันเริ่มยืม</div><div class="brow-val">${b.dateFrom||'-'}</div></div>
-          <div><div class="brow-field">วันสิ้นสุด</div><div class="brow-val">${b.dateTo||'-'}</div></div>
-          <div><div class="brow-field">เบอร์ติดต่อ</div><div class="brow-val">${esc(b.phone||'-')}</div></div>
-        </div>
-        <div style="font-size:11px;color:#666;margin-top:8px;border-top:.5px solid #eee;padding-top:6px;line-height:1.5">
-          <b>📍 พิกัดจอด:</b> ${esc(b.floor||'-')} เสา ${esc(b.pillar||'-')}
-          ${b.mileage?` | 🔢 <b>เลขไมล์:</b> ${esc(b.mileage)} กม.`:''}<br>
-          <b>💡 ไปที่ไหน/ทำอะไร:</b> ${esc(b.purpose)}
-        </div>
-      </div>`;
-    }).join('');
-    content=`
-      <div class="filter-bar">
-        <button class="filter-btn ${filter==='all'?'on':''}"       onclick="setFilter('all')">ทั้งหมด</button>
-        <button class="filter-btn ${filter==='active'?'on':''}"    onclick="setFilter('active')">กำลังจอง</button>
-        <button class="filter-btn ${filter==='returned'?'on':''}"  onclick="setFilter('returned')">คืนแล้ว</button>
-        <button class="filter-btn ${filter==='cancelled'?'on':''}" onclick="setFilter('cancelled')">ยกเลิกแล้ว</button>
-      </div>
-      ${cards||'<div class="empty">ไม่พบข้อมูลประวัติการจอง</div>'}`;
-  }
+  document.getElementById('root').innerHTML = stats + tabBar + content;
+}
 
-  document.getElementById('root').innerHTML = stats+tabBar+content;
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // =============================================
 // INIT
 // =============================================
-window.onload = function() {
-  syncFromSheets(false);
-  scheduleAutoSync();
-};
+render();
+syncFromSheets(true);
+scheduleAutoSync();
 </script>
 </body>
 </html>
