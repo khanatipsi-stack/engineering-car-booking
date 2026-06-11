@@ -150,7 +150,7 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 // =============================================
 // ⚙️ CONFIG
 // =============================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxqZkXNGhEh3HYV1GOXwP1yIGl6skviGPkylZ7JAPSQAPg6VrMl6NeiQjgxilULpAc/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyOXVGNifYj-SlyeW0GWT5iBpzFThuzxvHZfa7_lTzNQ4d9s2rMauix2FbzOIDV2j3L/exec';
 const ADMIN_PIN = '10080235';
 
 const CARS = [
@@ -233,7 +233,7 @@ function getLastInfo(carId) {
 // =============================================
 // JSONP ENGINE
 // =============================================
-function jsonpCall(params, onSuccess, onError, timeoutMs=25000) {
+function jsonpCall(params, onSuccess, onError, timeoutMs=15000) {
   const cbName = '__jsonp_' + (++jsonpCounter) + '_' + Date.now();
   const scriptId = 'jsonp_' + jsonpCounter;
   let done = false;
@@ -274,12 +274,12 @@ function jsonpCall(params, onSuccess, onError, timeoutMs=25000) {
 // =============================================
 // SYNC
 // =============================================
-function syncFromSheets(manual=false, retryCount=0) {
+function syncFromSheets(manual=false) {
   if (isSyncing) return;
   isSyncing = true;
   const btn = document.getElementById('sync-btn');
   if (btn) { btn.disabled=true; btn.textContent='⟳ กำลังซิงค์...'; }
-  if (manual && retryCount===0) setSyncStatus('กำลังซิงค์...');
+  if (manual) setSyncStatus('กำลังซิงค์...');
 
   jsonpCall('action=getBookings',
     (data) => {
@@ -294,14 +294,8 @@ function syncFromSheets(manual=false, retryCount=0) {
     (err) => {
       isSyncing = false;
       if (btn) { btn.disabled=false; btn.textContent='⟳ ซิงค์'; }
-      // retry ครั้งเดียวอัตโนมัติ (GAS cold start)
-      if (retryCount < 1) {
-        setSyncStatus('กำลังลองใหม่...');
-        setTimeout(() => syncFromSheets(manual, retryCount+1), 3000);
-        return;
-      }
-      setSyncStatus('ซิงค์ไม่สำเร็จ — กด ⟳ เพื่อลองใหม่');
-      if (manual) showToast('ซิงค์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', true);
+      setSyncStatus('ซิงค์ไม่สำเร็จ');
+      if (manual) showToast('ซิงค์ไม่สำเร็จ: ' + err, true);
     }
   );
 }
