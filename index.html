@@ -270,27 +270,60 @@ function getLastInfo(carId) {
 // FETCH ENGINE (แทน JSONP เดิม)
 // รองรับทุก browser และทุก device
 // =============================================
-function jsonpCall(params, onSuccess, onError, timeoutMs=15000) {
-  const url = GAS_URL + '?' + params + '&_t=' + Date.now();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+function jsonpCall(params, onSuccess, onError, timeoutMs = 15000) {
+  const cbName = '_cb_' + Date.now();
+  const script = document.createElement('script');
+  let timer;
 
-  fetch(url, { signal: controller.signal })
-    .then(res => {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    })
-    .then(data => {
-      clearTimeout(timer);
-      if (data && data.success) onSuccess(data);
-      else onError(data ? (data.error || data.message || 'Server error') : 'No response');
-    })
-    .catch(err => {
-      clearTimeout(timer);
-      if (err.name === 'AbortError') onError('Timeout — ตรวจสอบ GAS_URL');
-      else onError(err.message || 'Network error');
-    });
+  window[cbName] = function(data) {
+    clearTimeout(timer);
+    script.remove();
+    delete window[cbName];
+    if (data && data.success) onSuccess(data);
+    else onError(data ? (data.error || 'Server error') : 'No response');
+  };
+
+  timer = setTimeout(() => {
+    script.remove();
+    delete window[cbName];
+    onError('Timeout — ตรวจสอบ GAS_URL');
+  }, timeoutMs);
+
+  script.src = GAS_URL + '?' + params + '&callback=' + cbName + '&_t=' + Date.now();
+  script.onerror = () => {
+    clearTimeout(timer);
+    script.remove();
+    delete window[cbName];
+    onError('Network error — โหลด script ไม่ได้');
+  };
+  document.head.appendChild(script);
 }
+สาเหตุอื่นที่ควรเช็คด้วย:
+
+GAS Deploy settings — ต้องตั้งเป็น "Execute as: Me" และ "Who has access: Anyone" (ไม่ใช่ "Anyone with Google account")
+Re-deploy หลังแก้โค้ด — ถ้าแก้ GAS แล้วไม่ deploy ใหม่ จะยังใช้ version เก่าอยู่ ต้องกด "Deploy > Manage deployments > Create new version"
+GAS_URL ถูกต้องไหม — ลอง เปิด URL ใน browser ตรงๆ แล้วต่อท้ายด้วย ?action=getBookings ถ้าเห็น JSON แสดงว่า GAS ทำงานปกติ ปัญหาอยู่ที่ CORS ฝั่ง frontend อย่างเดียว
+แนะนำให้แก้ jsonpCall() เป็น JSONP จริงๆ ตามแนวทาง 2 ก่อนเลยครับ เพราะ GAS ออกแบบมารองรับ JSONP อยู่แล้ว (มี callback parameter และ respond() ใน GAS ก็รองรับไว้แล้ว)
+
+ส่ง Code ทั้งหมดเอาแนวทางที่ 2 มาครับ
+
+1:19 PM
+
+Read frontend design skill
+Read frontend design skill
+โค้ด HTML เดิมยาวมาก ขอสร้างไฟล์ใหม่โดยแก้เฉพาะส่วน jsonpCall() ครับ
+
+
+Check uploaded files
+Check uploaded files
+ไม่มีไฟล์อัปโหลด ขอสร้างจากโค้ดใน context เลยครับ
+
+
+Car booking system with JSONP fix
+Car booking system with JSONP fix
+
+
+Claude Fa
 
 // =============================================
 // SYNC
