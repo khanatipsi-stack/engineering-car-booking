@@ -147,9 +147,12 @@ const CARS = [
 let bookings=[], tab='form', filter='all', selCar=null, returnCarId=null;
 let isSyncing=false, syncTimer=null, jpCounter=0;
 let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+// form state — source of truth always read from DOM at action time
 let form={name:'',dept:'',phone:'',dateFrom:'',dateTo:'',purpose:'',driver:'',email:''};
 
+// =============================================
 // UTILS
+// =============================================
 function esc(s){
   if(s===null||s===undefined) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -160,57 +163,24 @@ function todayStr(){
 }
 function pad(n){return String(n).padStart(2,'0');}
 
-// =============================================
-// 🔧 normalizeDate — แก้ไขหลัก: รองรับทุก format
-//    รวมถึง "Mon Jun 22 2026 00:00:00 GMT+0700"
-// =============================================
 function normalizeDate(v){
   if(!v) return '';
-
-  // กรณี Date object โดยตรง
   if(v instanceof Date){
     if(isNaN(v.getTime())) return '';
     return v.getFullYear()+'-'+pad(v.getMonth()+1)+'-'+pad(v.getDate());
   }
-
-  const s = String(v).trim();
-  if(!s || s==='undefined' || s==='null') return '';
-
-  // รูปแบบ yyyy-MM-dd (standard — ใช้เลยไม่ต้องแปลง)
-  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(isoMatch){
-    return isoMatch[1]+'-'+isoMatch[2]+'-'+isoMatch[3];
-  }
-
-  // รูปแบบ dd/MM/yyyy
-  const dmyMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(dmyMatch){
-    return dmyMatch[3]+'-'+pad(dmyMatch[2])+'-'+pad(dmyMatch[1]);
-  }
-
-  // รูปแบบ "Mon Jun 22 2026 ..." หรือ "Mon, 22 Jun 2026 ..."
-  // ใช้ Date.parse แล้วบังคับเป็น local date โดยไม่ให้ timezone ขยับวัน
-  const parsed = new Date(s);
+  const s=String(v).trim();
+  if(!s) return '';
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
+  const parsed=new Date(s);
   if(!isNaN(parsed.getTime())){
-    // ถ้า string มี timezone offset ใน text ให้ดึง UTC แล้วบวก +7 (Asia/Bangkok)
-    // แต่วิธีที่ safe ที่สุดคือ extract year/month/day จาก string ตรงๆ ก่อน
-    // ลอง regex จับ วัน เดือน ปี จาก string เช่น "Mon Jun 22 2026"
-    const mdyMatch = s.match(/(\w+)\s+(\d{1,2})\s+(\d{4})/);
-    const months = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-    if(mdyMatch && months[mdyMatch[1]]){
-      const yr = mdyMatch[3];
-      const mo = pad(months[mdyMatch[1]]);
-      const dy = pad(mdyMatch[2]);
-      return yr+'-'+mo+'-'+dy;
-    }
-    // fallback: ใช้ UTC date (ป้องกัน timezone shift)
-    return parsed.getUTCFullYear()+'-'+pad(parsed.getUTCMonth()+1)+'-'+pad(parsed.getUTCDate());
+    const utc=new Date(parsed.getTime()+parsed.getTimezoneOffset()*60000);
+    if(utc.getFullYear()>2000) return utc.getFullYear()+'-'+pad(utc.getMonth()+1)+'-'+pad(utc.getDate());
+    return parsed.getFullYear()+'-'+pad(parsed.getMonth()+1)+'-'+pad(parsed.getDate());
   }
-
-  // ตัด T ทิ้ง (ISO with time)
-  if(s.includes('T')) return s.split('T')[0];
-
-  return '';
+  const dmy=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(dmy) return dmy[3]+'-'+pad(dmy[2])+'-'+pad(dmy[1]);
+  return s.split('T')[0];
 }
 
 function showToast(msg,isErr=false){
@@ -228,42 +198,41 @@ function setSyncStatus(text){
 }
 
 // =============================================
-// 🔧 isCarBusy — ตรวจสอบการจองซ้อน
-//    ใช้ normalizeDate ที่แก้แล้ว + log เพื่อ debug
+// CORE: อ่าน DOM เสมอ — ไม่พึ่ง cache form.dateFrom/dateTo
 // =============================================
+function getCurrentDates(){
+  const fe=document.getElementById('f-from');
+  const te=document.getElementById('f-to');
+  return {
+    dateFrom: fe ? fe.value : form.dateFrom,
+    dateTo:   te ? te.value : form.dateTo,
+  };
+}
+
+// ตรวจสอบรถว่าง — รับ dateFrom/dateTo โดยตรง (ไม่อาศัย global form)
 function isCarBusy(carId, fromDate, toDate){
-  if(!fromDate || !toDate) return false;
-  const f = normalizeDate(fromDate);
-  const t = normalizeDate(toDate);
-  const cid = String(carId).trim();
-
-  if(!f || !t) return false;
-
-  return bookings.some(b => {
-    if(String(b.carId).trim() !== cid) return false;
-    if(b.status !== 'active') return false;
-    if(!b.dateFrom || !b.dateTo) return false;
-    // overlap check: new[from,to] ทับ exist[dateFrom,dateTo]
-    // ทับกันเมื่อ: f <= b.dateTo && t >= b.dateFrom
-    const overlap = (f <= b.dateTo) && (t >= b.dateFrom);
-    return overlap;
+  if(!fromDate||!toDate) return false;
+  const f=normalizeDate(fromDate), t=normalizeDate(toDate);
+  const cid=String(carId).trim();
+  return bookings.some(b=>{
+    if(String(b.carId).trim()!==cid) return false;
+    if(b.status!=='active') return false;
+    if(!b.dateFrom||!b.dateTo) return false;
+    // overlap: f <= b.dateTo AND t >= b.dateFrom
+    return f<=b.dateTo && t>=b.dateFrom;
   });
 }
-
 function getBusyInfo(carId, fromDate, toDate){
-  if(!fromDate || !toDate) return null;
-  const f = normalizeDate(fromDate);
-  const t = normalizeDate(toDate);
-  const cid = String(carId).trim();
-  if(!f || !t) return null;
-  return bookings.find(b => {
-    if(String(b.carId).trim() !== cid) return false;
-    if(b.status !== 'active') return false;
-    if(!b.dateFrom || !b.dateTo) return false;
-    return (f <= b.dateTo) && (t >= b.dateFrom);
-  }) || null;
+  if(!fromDate||!toDate) return null;
+  const f=normalizeDate(fromDate), t=normalizeDate(toDate);
+  const cid=String(carId).trim();
+  return bookings.find(b=>{
+    if(String(b.carId).trim()!==cid) return false;
+    if(b.status!=='active') return false;
+    if(!b.dateFrom||!b.dateTo) return false;
+    return f<=b.dateTo && t>=b.dateFrom;
+  })||null;
 }
-
 function getLastInfo(carId){
   const id=String(carId).trim();
   const base=bookings.filter(b=>String(b.carId).trim()===id&&(b.status==='active'||b.status==='returned'));
@@ -277,7 +246,9 @@ function getLastInfo(carId){
   return{floor:'ชั้น 1',pillar:'ลานจอดหลัก',by:'',mileage:''};
 }
 
+// =============================================
 // JSONP ENGINE
+// =============================================
 function gasCall(params,onSuccess,onError,timeoutMs=20000){
   const cbName='_gcb'+(++jpCounter)+'_'+Date.now();
   const scriptId='_gs'+jpCounter;
@@ -304,7 +275,7 @@ function gasCall(params,onSuccess,onError,timeoutMs=20000){
 }
 
 // =============================================
-// 🔧 SYNC — normalize dateFrom/dateTo ทันทีหลัง sync
+// SYNC
 // =============================================
 function syncFromSheets(manual=false){
   if(isSyncing) return;
@@ -316,31 +287,21 @@ function syncFromSheets(manual=false){
     (data)=>{
       isSyncing=false;
       if(btn){btn.disabled=false;btn.textContent='⟳ ซิงค์';}
-
-      bookings=(data.bookings||[]).map(b=>{
-        // normalize dates ก่อนเสมอ
-        const df = normalizeDate(b.dateFrom);
-        const dt = normalizeDate(b.dateTo);
-
-        return {
-          ...b,
-          carId   : String(b.carId   ||'').trim(),
-          status  : String(b.status  ||'').trim().toLowerCase(),
-          dateFrom: df,
-          dateTo  : dt,
-          phone   : (()=>{
-            const p=String(b.phone||'').trim();
-            return /^\d{9}$/.test(p)?'0'+p:p;
-          })(),
-        };
-      });
-
+      bookings=(data.bookings||[]).map(b=>({
+        ...b,
+        carId  :String(b.carId  ||'').trim(),
+        status :String(b.status ||'').trim().toLowerCase(),
+        dateFrom:normalizeDate(b.dateFrom),
+        dateTo  :normalizeDate(b.dateTo),
+        phone  :(()=>{const p=String(b.phone||'').trim();return /^\d{9}$/.test(p)?'0'+p:p;})(),
+      }));
       const now=new Date();
       setSyncStatus('ซิงค์ล่าสุด '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds()));
-
-      // ถ้ารถที่เลือกไว้กลายเป็น busy ให้ reset
-      if(selCar && form.dateFrom && form.dateTo && isCarBusy(selCar, form.dateFrom, form.dateTo)){
+      // re-validate selected car against fresh data
+      const {dateFrom,dateTo}=getCurrentDates();
+      if(selCar&&dateFrom&&dateTo&&isCarBusy(selCar,dateFrom,dateTo)){
         selCar=null;
+        showToast('รถที่เลือกถูกจองแล้ว กรุณาเลือกใหม่',true);
       }
       render();
       if(manual) showToast('ซิงค์สำเร็จ ('+bookings.length+' รายการ) ✓');
@@ -358,7 +319,9 @@ function scheduleAutoSync(){
   syncTimer=setTimeout(()=>{syncFromSheets(false);scheduleAutoSync();},60000);
 }
 
+// =============================================
 // MODALS
+// =============================================
 function showModal(title,lines,onClose,opts={}){
   const c=document.getElementById('modal-container');
   c.innerHTML=`<div class="modal-overlay"><div class="modal-box" onclick="event.stopPropagation()">
@@ -401,34 +364,50 @@ function confirmAdminPin(){
   }
 }
 
-// FORM
+// =============================================
+// FORM — captureForm รวมทั้งวันที่เสมอ
+// =============================================
 function captureForm(){
+  const fe=document.getElementById('f-from');
+  const te=document.getElementById('f-to');
+  if(fe) form.dateFrom=fe.value;
+  if(te) form.dateTo=te.value;
   ['name','dept','phone','email','driver','purpose'].forEach(k=>{
     const el=document.getElementById('f-'+k);if(el) form[k]=el.value;
   });
 }
+
 function updateDates(){
-  const fe=document.getElementById('f-from'),te=document.getElementById('f-to');
-  if(fe) form.dateFrom=fe.value;
-  if(te) form.dateTo=te.value;
+  captureForm(); // อ่านทุก field รวมวันที่
+  // ป้องกัน dateTo < dateFrom
   if(form.dateFrom&&form.dateTo&&form.dateTo<form.dateFrom){
-    form.dateTo=form.dateFrom;if(te)te.value=form.dateFrom;
+    form.dateTo=form.dateFrom;
+    const te=document.getElementById('f-to');
+    if(te) te.value=form.dateFrom;
   }
-  captureForm();
-  // reset car selection ถ้ารถที่เลือกไว้ไม่ว่างแล้ว
-  if(selCar&&form.dateFrom&&form.dateTo&&isCarBusy(selCar,form.dateFrom,form.dateTo)) selCar=null;
+  // ถ้ารถที่เลือกไว้ชนกับวันใหม่ → reset selCar ทันที
+  if(selCar&&form.dateFrom&&form.dateTo&&isCarBusy(selCar,form.dateFrom,form.dateTo)){
+    selCar=null;
+  }
   render();
 }
+
 function setSelCar(id){
-  captureForm();
-  // double-check ก่อน select
-  if(form.dateFrom&&form.dateTo&&isCarBusy(id,form.dateFrom,form.dateTo)){
-    showToast('รถคันนี้ถูกจองแล้วในช่วงวันที่เลือก',true);
+  captureForm(); // อ่านวันที่จาก DOM ก่อน
+  const {dateFrom,dateTo}=form;
+  if(!dateFrom||!dateTo){
+    showToast('กรุณาเลือกวันที่ก่อนเลือกรถ',true);
+    return;
+  }
+  // ตรวจซ้ำอีกครั้งก่อน set
+  if(isCarBusy(id,dateFrom,dateTo)){
+    showToast('รถคันนี้ถูกจองในช่วงวันที่เลือกแล้ว',true);
     return;
   }
   selCar=id;
   render();
 }
+
 function setTab(t){captureForm();tab=t;render();}
 function setFilter(f){filter=f;render();}
 function selectReturn(id){returnCarId=id;render();}
@@ -437,21 +416,24 @@ function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}render();}
 function calGoToday(){calYear=new Date().getFullYear();calMonth=new Date().getMonth();render();}
 
 // =============================================
-// 🔧 SUBMIT — ตรวจสอบซ้ำก่อนส่ง + sync หลังส่ง
+// SUBMIT — ตรวจสอบซ้ำจาก DOM โดยตรง
 // =============================================
 function submit(){
-  captureForm();
-  if(!form.dateFrom||!form.dateTo){showToast('ระบุวันที่ยืม-คืนก่อนครับ',true);return;}
-  if(form.dateTo<form.dateFrom){showToast('วันคืนต้องไม่ก่อนวันยืม',true);return;}
+  captureForm(); // อ่านทุกอย่างจาก DOM ก่อนเสมอ
+
+  const dateFrom=form.dateFrom;
+  const dateTo=form.dateTo;
+
+  if(!dateFrom||!dateTo){showToast('ระบุวันที่ยืม-คืนก่อนครับ',true);return;}
+  if(dateTo<dateFrom){showToast('วันคืนต้องไม่ก่อนวันยืม',true);return;}
   if(!selCar){showToast('เลือกรถยนต์ก่อนครับ',true);return;}
 
-  // ตรวจ busy อีกครั้งก่อนส่ง (กัน race condition)
-  if(isCarBusy(selCar,form.dateFrom,form.dateTo)){
-    const bi=getBusyInfo(selCar,form.dateFrom,form.dateTo);
+  // ตรวจซ้ำอีกครั้งก่อน submit (ป้องกัน race condition และ stale state)
+  if(isCarBusy(selCar,dateFrom,dateTo)){
+    const bi=getBusyInfo(selCar,dateFrom,dateTo);
     showToast('รถคันนี้ถูกจองในช่วงนี้แล้ว'+(bi?' (โดย '+bi.name+')':''),true);
-    selCar=null; render(); return;
+    selCar=null;render();return;
   }
-
   if(!form.name.trim()){showToast('ระบุชื่อผู้ใช้งาน',true);return;}
   if(!form.email.trim()||!form.email.includes('@')){showToast('ระบุ Email ให้ถูกต้อง',true);return;}
   if(!form.purpose.trim()){showToast('ระบุวัตถุประสงค์',true);return;}
@@ -468,8 +450,8 @@ function submit(){
     'phone='    +encodeURIComponent(form.phone.trim()),
     'driver='   +encodeURIComponent(form.driver.trim()),
     'email='    +encodeURIComponent(form.email.trim()),
-    'dateFrom=' +encodeURIComponent(form.dateFrom),
-    'dateTo='   +encodeURIComponent(form.dateTo),
+    'dateFrom=' +encodeURIComponent(dateFrom),
+    'dateTo='   +encodeURIComponent(dateTo),
     'purpose='  +encodeURIComponent(form.purpose.trim()),
     'floor='    +encodeURIComponent(info.floor),
     'pillar='   +encodeURIComponent(info.pillar),
@@ -484,7 +466,7 @@ function submit(){
       showModal('🎉 ส่งคำขอจองสำเร็จ!',[
         `<b>🚗 รถทะเบียน:</b> ${car.plate} (${car.name})`,
         `<b>👤 ผู้จอง:</b> ${esc(form.name)}`,
-        `<b>📅 วันยืม:</b> ${form.dateFrom} &nbsp;→&nbsp; <b>วันคืน:</b> ${form.dateTo}`,
+        `<b>📅 วันยืม:</b> ${dateFrom} &nbsp;→&nbsp; <b>วันคืน:</b> ${dateTo}`,
         `<b>🅿️ พิกัดรับรถ:</b> <span style="color:#1D9E75;font-weight:600">${esc(info.floor)} เสา ${esc(info.pillar)}</span>`,
       ],()=>{showReminderModal(car,info);});
       form={name:'',dept:'',phone:'',dateFrom:'',dateTo:'',purpose:'',driver:'',email:''};
@@ -524,10 +506,12 @@ function showReminderModal(car,info){
 }
 function closeModalReminder(){
   document.getElementById('modal-container').innerHTML='';
-  tab='list'; syncFromSheets(false);
+  tab='list';syncFromSheets(false);
 }
 
+// =============================================
 // RETURN
+// =============================================
 function executeReturn(id){
   const fv=(document.getElementById('ret-floor')||{}).value||'';
   const pv=(document.getElementById('ret-pillar')||{}).value||'';
@@ -546,7 +530,7 @@ function executeReturn(id){
   setLoading(true,'กำลังบันทึกการคืนรถ...');
   gasCall(params,
     ()=>{
-      setLoading(false); returnCarId=null;
+      setLoading(false);returnCarId=null;
       showModal('✅ คืนรถสำเร็จ!',[
         `<b>🚗 รถทะเบียน:</b> ${car?car.plate:''}`,
         `<b>👤 ผู้คืน:</b> ${esc(b.name)}`,
@@ -568,7 +552,9 @@ function cancelBook(id){
   });
 }
 
-// CALENDAR
+// =============================================
+// CALENDAR — ดึงเฉพาะ active bookings
+// =============================================
 function generateMonthlyCalendar(){
   const thMonths=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
                   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -578,6 +564,19 @@ function generateMonthlyCalendar(){
   const startOff=firstDay.getDay()===0?6:firstDay.getDay()-1;
   const gridStart=new Date(firstDay);
   gridStart.setDate(1-startOff);
+
+  // เดือนนี้ start/end เพื่อ pre-filter bookings ให้เร็วขึ้น
+  const monthStart=calYear+'-'+pad(calMonth+1)+'-01';
+  const lastDayOfMonth=new Date(calYear,calMonth+1,0).getDate();
+  const monthEnd=calYear+'-'+pad(calMonth+1)+'-'+pad(lastDayOfMonth);
+
+  // กรอง active bookings ที่คาบเกี่ยวกับเดือนนี้
+  const activeThisMonth=bookings.filter(b=>{
+    if(b.status!=='active') return false;
+    if(!b.dateFrom||!b.dateTo) return false;
+    // overlap กับช่วงเดือน
+    return b.dateFrom<=monthEnd && b.dateTo>=monthStart;
+  });
 
   let html=`<div class="cal-nav">
     <button class="cal-nav-btn" onclick="calPrev()">‹</button>
@@ -603,13 +602,12 @@ function generateMonthlyCalendar(){
       const isThisMonth=cd.getMonth()===calMonth;
       const isToday=ds===today;
 
-      const bks1=bookings.filter(b=>
-        String(b.carId).trim()==='1723'&&b.status==='active'&&
-        b.dateFrom&&b.dateTo&&ds>=b.dateFrom&&ds<=b.dateTo
+      // ค้นหาจาก activeThisMonth (เร็วกว่า scan ทั้งหมด)
+      const bks1=activeThisMonth.filter(b=>
+        String(b.carId).trim()==='1723'&&ds>=b.dateFrom&&ds<=b.dateTo
       );
-      const bks2=bookings.filter(b=>
-        String(b.carId).trim()==='7902'&&b.status==='active'&&
-        b.dateFrom&&b.dateTo&&ds>=b.dateFrom&&ds<=b.dateTo
+      const bks2=activeThisMonth.filter(b=>
+        String(b.carId).trim()==='7902'&&ds>=b.dateFrom&&ds<=b.dateTo
       );
       const hasBk=bks1.length>0||bks2.length>0;
 
@@ -631,13 +629,18 @@ function generateMonthlyCalendar(){
   html+=`</div><div class="cal-legend">
     <span><span style="background:#d4edde;color:#0a5c40;padding:1px 7px;border-radius:3px;font-weight:600">■</span>&nbsp;ทะเบียน 1723</span>
     <span><span style="background:#d4e4ff;color:#1a3c8a;padding:1px 7px;border-radius:3px;font-weight:600">■</span>&nbsp;ทะเบียน 7902</span>
+    <span style="color:#aaa">* แสดงเฉพาะการจองที่กำลัง Active</span>
   </div>`;
   return html;
 }
 
+// =============================================
 // RENDER
+// =============================================
 function render(){
   const ts=todayStr();
+
+  // สถิติ: นับจากวันนี้
   const todayActiveCt=CARS.filter(c=>bookings.some(b=>
     String(b.carId).trim()===c.id&&b.status==='active'&&
     b.dateFrom&&b.dateTo&&b.dateFrom<=ts&&b.dateTo>=ts
@@ -660,14 +663,17 @@ function render(){
 
   let content='';
 
+  // ======== TAB: FORM ========
   if(tab==='form'){
-    const hasDates=form.dateFrom&&form.dateTo;
+    const hasDates=form.dateFrom&&form.dateTo&&form.dateFrom.length===10&&form.dateTo.length===10;
+
     const carCards=CARS.map(car=>{
       const busy=hasDates?isCarBusy(car.id,form.dateFrom,form.dateTo):false;
       const bi=busy?getBusyInfo(car.id,form.dateFrom,form.dateTo):null;
-      const sel=selCar===car.id;
+      const sel=!busy&&selCar===car.id;
       const info=getLastInfo(car.id);
       const mileText=info.mileage?`🔢 เลขไมล์: ${esc(info.mileage)} กม.`:'🔢 ยังไม่มีข้อมูลเลขไมล์';
+
       if(busy){
         return `<div class="car-opt busy-car">
           <div style="display:flex;justify-content:space-between;align-items:center">
@@ -735,6 +741,7 @@ function render(){
       <button class="submit-btn" onclick="submit()">✓ ยืนยันคำขอจอง</button>`;
   }
 
+  // ======== TAB: RETURN ========
   else if(tab==='return'){
     const actives=bookings.filter(b=>b.status==='active');
     if(actives.length===0){
@@ -769,6 +776,7 @@ function render(){
     }
   }
 
+  // ======== TAB: CALENDAR ========
   else if(tab==='calendar'){
     content=`<div class="card">
       <div class="card-title">📅 ตารางการใช้งานรายเดือน</div>
@@ -776,6 +784,7 @@ function render(){
     </div>`;
   }
 
+  // ======== TAB: LIST ========
   else if(tab==='list'){
     let listData=[...bookings].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
     if(filter!=='all') listData=listData.filter(b=>b.status===filter);
