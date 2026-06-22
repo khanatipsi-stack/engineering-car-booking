@@ -134,7 +134,7 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 </div>
 <script>
 // =============================================
-// ⚙️ CONFIG — เปลี่ยน GAS_URL ตรงนี้เมื่อ deploy ใหม่
+// ⚙️ CONFIG
 // =============================================
 const GAS_URL   = 'https://script.google.com/macros/s/AKfycbz0oSaWc5cjVxCdMrvR4b4pSE0nkUrdiXx79M1i1CBcKhQwluTXvr6uSr4oWOtiNdtm/exec';
 const ADMIN_PIN = '10080235';
@@ -160,25 +160,57 @@ function todayStr(){
 }
 function pad(n){return String(n).padStart(2,'0');}
 
-// normalizeDate — รองรับทุก format
+// =============================================
+// 🔧 normalizeDate — แก้ไขหลัก: รองรับทุก format
+//    รวมถึง "Mon Jun 22 2026 00:00:00 GMT+0700"
+// =============================================
 function normalizeDate(v){
   if(!v) return '';
+
+  // กรณี Date object โดยตรง
   if(v instanceof Date){
     if(isNaN(v.getTime())) return '';
     return v.getFullYear()+'-'+pad(v.getMonth()+1)+'-'+pad(v.getDate());
   }
-  const s=String(v).trim();
-  if(!s) return '';
-  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
-  const parsed=new Date(s);
-  if(!isNaN(parsed.getTime())){
-    const utc=new Date(parsed.getTime()+parsed.getTimezoneOffset()*60000);
-    if(utc.getFullYear()>2000) return utc.getFullYear()+'-'+pad(utc.getMonth()+1)+'-'+pad(utc.getDate());
-    return parsed.getFullYear()+'-'+pad(parsed.getMonth()+1)+'-'+pad(parsed.getDate());
+
+  const s = String(v).trim();
+  if(!s || s==='undefined' || s==='null') return '';
+
+  // รูปแบบ yyyy-MM-dd (standard — ใช้เลยไม่ต้องแปลง)
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(isoMatch){
+    return isoMatch[1]+'-'+isoMatch[2]+'-'+isoMatch[3];
   }
-  const dmy=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(dmy) return dmy[3]+'-'+pad(dmy[2])+'-'+pad(dmy[1]);
-  return s.split('T')[0];
+
+  // รูปแบบ dd/MM/yyyy
+  const dmyMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(dmyMatch){
+    return dmyMatch[3]+'-'+pad(dmyMatch[2])+'-'+pad(dmyMatch[1]);
+  }
+
+  // รูปแบบ "Mon Jun 22 2026 ..." หรือ "Mon, 22 Jun 2026 ..."
+  // ใช้ Date.parse แล้วบังคับเป็น local date โดยไม่ให้ timezone ขยับวัน
+  const parsed = new Date(s);
+  if(!isNaN(parsed.getTime())){
+    // ถ้า string มี timezone offset ใน text ให้ดึง UTC แล้วบวก +7 (Asia/Bangkok)
+    // แต่วิธีที่ safe ที่สุดคือ extract year/month/day จาก string ตรงๆ ก่อน
+    // ลอง regex จับ วัน เดือน ปี จาก string เช่น "Mon Jun 22 2026"
+    const mdyMatch = s.match(/(\w+)\s+(\d{1,2})\s+(\d{4})/);
+    const months = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+    if(mdyMatch && months[mdyMatch[1]]){
+      const yr = mdyMatch[3];
+      const mo = pad(months[mdyMatch[1]]);
+      const dy = pad(mdyMatch[2]);
+      return yr+'-'+mo+'-'+dy;
+    }
+    // fallback: ใช้ UTC date (ป้องกัน timezone shift)
+    return parsed.getUTCFullYear()+'-'+pad(parsed.getUTCMonth()+1)+'-'+pad(parsed.getUTCDate());
+  }
+
+  // ตัด T ทิ้ง (ISO with time)
+  if(s.includes('T')) return s.split('T')[0];
+
+  return '';
 }
 
 function showToast(msg,isErr=false){
@@ -195,27 +227,43 @@ function setSyncStatus(text){
   const el=document.getElementById('sync-status-text'); if(el) el.textContent=text;
 }
 
-// ตรวจสอบรถว่าง — เทียบ string กับ string เสมอ
-function isCarBusy(carId,fromDate,toDate){
-  if(!fromDate||!toDate) return false;
-  const f=normalizeDate(fromDate), t=normalizeDate(toDate);
-  const cid=String(carId).trim();
-  return bookings.some(b=>{
-    if(String(b.carId).trim()!==cid) return false;
-    if(b.status!=='active') return false;
-    return b.dateFrom&&b.dateTo&&f<=b.dateTo&&t>=b.dateFrom;
+// =============================================
+// 🔧 isCarBusy — ตรวจสอบการจองซ้อน
+//    ใช้ normalizeDate ที่แก้แล้ว + log เพื่อ debug
+// =============================================
+function isCarBusy(carId, fromDate, toDate){
+  if(!fromDate || !toDate) return false;
+  const f = normalizeDate(fromDate);
+  const t = normalizeDate(toDate);
+  const cid = String(carId).trim();
+
+  if(!f || !t) return false;
+
+  return bookings.some(b => {
+    if(String(b.carId).trim() !== cid) return false;
+    if(b.status !== 'active') return false;
+    if(!b.dateFrom || !b.dateTo) return false;
+    // overlap check: new[from,to] ทับ exist[dateFrom,dateTo]
+    // ทับกันเมื่อ: f <= b.dateTo && t >= b.dateFrom
+    const overlap = (f <= b.dateTo) && (t >= b.dateFrom);
+    return overlap;
   });
 }
-function getBusyInfo(carId,fromDate,toDate){
-  if(!fromDate||!toDate) return null;
-  const f=normalizeDate(fromDate), t=normalizeDate(toDate);
-  const cid=String(carId).trim();
-  return bookings.find(b=>{
-    if(String(b.carId).trim()!==cid) return false;
-    if(b.status!=='active') return false;
-    return b.dateFrom&&b.dateTo&&f<=b.dateTo&&t>=b.dateFrom;
-  })||null;
+
+function getBusyInfo(carId, fromDate, toDate){
+  if(!fromDate || !toDate) return null;
+  const f = normalizeDate(fromDate);
+  const t = normalizeDate(toDate);
+  const cid = String(carId).trim();
+  if(!f || !t) return null;
+  return bookings.find(b => {
+    if(String(b.carId).trim() !== cid) return false;
+    if(b.status !== 'active') return false;
+    if(!b.dateFrom || !b.dateTo) return false;
+    return (f <= b.dateTo) && (t >= b.dateFrom);
+  }) || null;
 }
+
 function getLastInfo(carId){
   const id=String(carId).trim();
   const base=bookings.filter(b=>String(b.carId).trim()===id&&(b.status==='active'||b.status==='returned'));
@@ -255,7 +303,9 @@ function gasCall(params,onSuccess,onError,timeoutMs=20000){
   s.src=url; document.body.appendChild(s);
 }
 
-// SYNC
+// =============================================
+// 🔧 SYNC — normalize dateFrom/dateTo ทันทีหลัง sync
+// =============================================
 function syncFromSheets(manual=false){
   if(isSyncing) return;
   isSyncing=true;
@@ -266,17 +316,32 @@ function syncFromSheets(manual=false){
     (data)=>{
       isSyncing=false;
       if(btn){btn.disabled=false;btn.textContent='⟳ ซิงค์';}
-      bookings=(data.bookings||[]).map(b=>({
-        ...b,
-        carId  :String(b.carId  ||'').trim(),
-        status :String(b.status ||'').trim().toLowerCase(),
-        dateFrom:normalizeDate(b.dateFrom),
-        dateTo  :normalizeDate(b.dateTo),
-        phone  :(()=>{const p=String(b.phone||'').trim();return /^\d{9}$/.test(p)?'0'+p:p;})(),
-      }));
+
+      bookings=(data.bookings||[]).map(b=>{
+        // normalize dates ก่อนเสมอ
+        const df = normalizeDate(b.dateFrom);
+        const dt = normalizeDate(b.dateTo);
+
+        return {
+          ...b,
+          carId   : String(b.carId   ||'').trim(),
+          status  : String(b.status  ||'').trim().toLowerCase(),
+          dateFrom: df,
+          dateTo  : dt,
+          phone   : (()=>{
+            const p=String(b.phone||'').trim();
+            return /^\d{9}$/.test(p)?'0'+p:p;
+          })(),
+        };
+      });
+
       const now=new Date();
       setSyncStatus('ซิงค์ล่าสุด '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds()));
-      if(selCar&&form.dateFrom&&form.dateTo&&isCarBusy(selCar,form.dateFrom,form.dateTo)) selCar=null;
+
+      // ถ้ารถที่เลือกไว้กลายเป็น busy ให้ reset
+      if(selCar && form.dateFrom && form.dateTo && isCarBusy(selCar, form.dateFrom, form.dateTo)){
+        selCar=null;
+      }
       render();
       if(manual) showToast('ซิงค์สำเร็จ ('+bookings.length+' รายการ) ✓');
     },
@@ -346,12 +411,24 @@ function updateDates(){
   const fe=document.getElementById('f-from'),te=document.getElementById('f-to');
   if(fe) form.dateFrom=fe.value;
   if(te) form.dateTo=te.value;
-  if(form.dateFrom&&form.dateTo&&form.dateTo<form.dateFrom){form.dateTo=form.dateFrom;if(te)te.value=form.dateFrom;}
+  if(form.dateFrom&&form.dateTo&&form.dateTo<form.dateFrom){
+    form.dateTo=form.dateFrom;if(te)te.value=form.dateFrom;
+  }
   captureForm();
+  // reset car selection ถ้ารถที่เลือกไว้ไม่ว่างแล้ว
   if(selCar&&form.dateFrom&&form.dateTo&&isCarBusy(selCar,form.dateFrom,form.dateTo)) selCar=null;
   render();
 }
-function setSelCar(id){captureForm();selCar=id;render();}
+function setSelCar(id){
+  captureForm();
+  // double-check ก่อน select
+  if(form.dateFrom&&form.dateTo&&isCarBusy(id,form.dateFrom,form.dateTo)){
+    showToast('รถคันนี้ถูกจองแล้วในช่วงวันที่เลือก',true);
+    return;
+  }
+  selCar=id;
+  render();
+}
 function setTab(t){captureForm();tab=t;render();}
 function setFilter(f){filter=f;render();}
 function selectReturn(id){returnCarId=id;render();}
@@ -359,17 +436,22 @@ function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}render();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}render();}
 function calGoToday(){calYear=new Date().getFullYear();calMonth=new Date().getMonth();render();}
 
-// SUBMIT
+// =============================================
+// 🔧 SUBMIT — ตรวจสอบซ้ำก่อนส่ง + sync หลังส่ง
+// =============================================
 function submit(){
   captureForm();
   if(!form.dateFrom||!form.dateTo){showToast('ระบุวันที่ยืม-คืนก่อนครับ',true);return;}
   if(form.dateTo<form.dateFrom){showToast('วันคืนต้องไม่ก่อนวันยืม',true);return;}
   if(!selCar){showToast('เลือกรถยนต์ก่อนครับ',true);return;}
+
+  // ตรวจ busy อีกครั้งก่อนส่ง (กัน race condition)
   if(isCarBusy(selCar,form.dateFrom,form.dateTo)){
     const bi=getBusyInfo(selCar,form.dateFrom,form.dateTo);
     showToast('รถคันนี้ถูกจองในช่วงนี้แล้ว'+(bi?' (โดย '+bi.name+')':''),true);
-    selCar=null;render();return;
+    selCar=null; render(); return;
   }
+
   if(!form.name.trim()){showToast('ระบุชื่อผู้ใช้งาน',true);return;}
   if(!form.email.trim()||!form.email.includes('@')){showToast('ระบุ Email ให้ถูกต้อง',true);return;}
   if(!form.purpose.trim()){showToast('ระบุวัตถุประสงค์',true);return;}
@@ -410,7 +492,6 @@ function submit(){
     },
     (err)=>{
       setLoading(false);
-      // ถ้า GAS แจ้งว่าจองซ้อน ให้ sync ใหม่แล้วแสดงข้อความ
       if(err&&err.includes('ถูกจอง')){
         showToast('รถคันนี้ถูกจองแล้ว กรุณาเลือกวันหรือรถใหม่',true);
         selCar=null; syncFromSheets(false);
@@ -443,7 +524,7 @@ function showReminderModal(car,info){
 }
 function closeModalReminder(){
   document.getElementById('modal-container').innerHTML='';
-  tab='list';syncFromSheets(false);
+  tab='list'; syncFromSheets(false);
 }
 
 // RETURN
@@ -465,7 +546,7 @@ function executeReturn(id){
   setLoading(true,'กำลังบันทึกการคืนรถ...');
   gasCall(params,
     ()=>{
-      setLoading(false);returnCarId=null;
+      setLoading(false); returnCarId=null;
       showModal('✅ คืนรถสำเร็จ!',[
         `<b>🚗 รถทะเบียน:</b> ${car?car.plate:''}`,
         `<b>👤 ผู้คืน:</b> ${esc(b.name)}`,
