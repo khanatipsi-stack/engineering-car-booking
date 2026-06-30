@@ -12,9 +12,12 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .topbar{background:#1D9E75;color:white;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .topbar h1{font-size:17px;font-weight:600}
 .topbar .sub{font-size:11px;opacity:.75;margin-top:2px}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
 .sync-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:white;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif;white-space:nowrap;transition:background .15s}
 .sync-btn:hover{background:rgba(255,255,255,.3)}
 .sync-btn:disabled{opacity:.5;cursor:default}
+.help-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:white;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;font-family:'Sarabun',sans-serif;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.help-btn:hover{background:rgba(255,255,255,.3)}
 .container{max-width:720px;margin:0 auto;padding:16px}
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .stat{background:white;border-radius:10px;padding:12px 14px;border:.5px solid #e0e0d8}
@@ -108,14 +111,16 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
 .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:2000;font-size:14px;color:#555;gap:10px}
 .spinner{width:20px;height:20px;border:2.5px solid #e0e0d8;border-top-color:#1D9E75;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:480px){
-  .grid2{grid-template-columns:1fr}
-  .brow-grid{grid-template-columns:1fr 1fr}
-  .tabs .tab{font-size:10px;padding:8px 3px}
-  .cal-cell{min-height:56px;padding:3px 2px}
-  .cal-chip{font-size:8px;padding:1px 3px}
-  .cal-day-num{font-size:10px}
-}
+/* HELP MODAL */
+.help-box{max-width:480px}
+.help-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+.help-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#1D9E75;color:white;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.help-step.ret .help-num{background:#185FA5}
+.help-step-title{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px}
+.help-step-desc{font-size:12px;color:#666;line-height:1.5}
+.help-section-label{font-size:11px;font-weight:600;color:#888;margin:14px 0 10px;padding-top:10px;border-top:.5px solid #eee;letter-spacing:.5px}
+.help-note{background:#FFF8E7;border:1px solid #F5C842;border-radius:8px;padding:10px 12px;font-size:11px;color:#7a5c00;margin-top:6px;line-height:1.6}
+.help-dont-show{display:flex;align-items:center;gap:6px;font-size:12px;color:#888;margin-top:14px}
 </style>
 </head>
 <body>
@@ -124,7 +129,10 @@ body{font-family:'Sarabun',sans-serif;background:#F5F5F0;color:#1a1a1a;min-heigh
     <h1>🚗 ระบบจองรถส่วนกลาง</h1>
     <div class="sub">Engineering Division · <span id="sync-status-text">กำลังโหลด...</span></div>
   </div>
-  <button class="sync-btn" id="sync-btn" onclick="syncFromSheets(true)">⟳ ซิงค์</button>
+  <div class="topbar-actions">
+    <button class="help-btn" onclick="showHelpModal()" title="วิธีใช้งาน">❓</button>
+    <button class="sync-btn" id="sync-btn" onclick="syncFromSheets(true)">⟳ ซิงค์</button>
+  </div>
 </div>
 <div class="container"><div id="root"></div></div>
 <div id="modal-container"></div>
@@ -362,6 +370,63 @@ function confirmAdminPin(){
     inp.style.borderColor='#c0392b';
     setTimeout(()=>{inp.style.borderColor='#ddd';},1200);
   }
+}
+
+// =============================================
+// HELP / HOW-TO-USE MODAL
+// =============================================
+function showHelpModal(){
+  document.getElementById('modal-container').innerHTML=`
+    <div class="modal-overlay" onclick="closeModal()">
+      <div class="modal-box help-box" onclick="event.stopPropagation()">
+        <div class="modal-title">📖 วิธีใช้งานระบบจองรถส่วนกลาง</div>
+
+        <div class="help-section-label">🟢 ฝั่งจองรถ (BOOKING)</div>
+        <div class="help-step">
+          <div class="help-num">1</div>
+          <div>
+            <div class="help-step-title">เช็กปฏิทิน</div>
+            <div class="help-step-desc">ไปที่แท็บ "📅 ตาราง" เพื่อดูคิวการใช้งานรถทั้งสองคันว่างวันไหนบ้าง</div>
+          </div>
+        </div>
+        <div class="help-step">
+          <div class="help-num">2</div>
+          <div>
+            <div class="help-step-title">กรอกข้อมูล</div>
+            <div class="help-step-desc">ไปที่แท็บ "+ จองรถ" → เลือกวันยืม-คืน → เลือกรถที่ว่าง (สีเขียว) → กรอกชื่อ, Email และวัตถุประสงค์ → กด "ยืนยันคำขอจอง"</div>
+          </div>
+        </div>
+        <div class="help-step">
+          <div class="help-num">3</div>
+          <div>
+            <div class="help-step-title">รับกุญแจ</div>
+            <div class="help-step-desc">หลังยืนยันสำเร็จ ระบบจะแจ้งจุดจอดรถปัจจุบัน ให้ไปรับกุญแจและเอกสารคู่มือรถที่จุดรับกุญแจก่อนออกเดินทาง</div>
+          </div>
+        </div>
+
+        <div class="help-section-label">🔵 ฝั่งคืนรถ (RETURNING)</div>
+        <div class="help-step ret">
+          <div class="help-num">4</div>
+          <div>
+            <div class="help-step-title">ตรวจเช็กรถ</div>
+            <div class="help-step-desc">เก็บขยะ/สิ่งของส่วนตัวออกจากรถ ตรวจดูระดับน้ำมัน และจดเลขไมล์หลังใช้งานเสร็จ</div>
+          </div>
+        </div>
+        <div class="help-step ret">
+          <div class="help-num">5</div>
+          <div>
+            <div class="help-step-title">คืนระบบ &amp; กุญแจ</div>
+            <div class="help-step-desc">ไปที่แท็บ "🔑 คืนรถ" → เลือกรายการที่ยืม → กรอกชั้น/เสาที่จอดคืน และเลขไมล์สุดท้าย → กด "ยืนยันบันทึกการคืนรถ" → นำกุญแจไปคืนที่จุดเดิม</div>
+          </div>
+        </div>
+
+        <div class="help-note">
+          ⚠️ <b>โปรดจำไว้:</b> หากมีการเปลี่ยนแปลงแผนการเดินทาง หรือคาดว่าจะใช้รถเกินเวลาที่จองไว้ กรุณาอัปเดตในระบบ หรือแจ้งผู้ดูแลรถทันที
+        </div>
+
+        <button class="modal-btn" onclick="closeModal()">เข้าใจแล้ว ✓</button>
+      </div>
+    </div>`;
 }
 
 // =============================================
@@ -828,7 +893,16 @@ function render(){
   document.getElementById('root').innerHTML=stats+tabBar+content;
 }
 
-window.onload=function(){render();syncFromSheets(false);scheduleAutoSync();};
+window.onload=function(){
+  render();syncFromSheets(false);scheduleAutoSync();
+  // เปิด Pop Up วิธีใช้งานอัตโนมัติสำหรับผู้ใช้ครั้งแรก
+  try{
+    if(!localStorage.getItem('carbooking_help_seen')){
+      showHelpModal();
+      localStorage.setItem('carbooking_help_seen','1');
+    }
+  }catch(e){}
+};
 </script>
 </body>
 </html>
